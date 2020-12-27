@@ -70,7 +70,7 @@ double mean(vector<double> data, int data_len){
     double mean = sum / data_len;
     return mean;
 }
-
+ 
 double GetSummation(vector<double> data, double mean){
     double summation = 0.0;
     for(auto c : data){
