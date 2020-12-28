@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <math.h>
+#include <stdexcept>
 using namespace std;
 
 struct class_struct{
@@ -27,7 +28,7 @@ vector<class_struct> CreateClasses(double min, double delta, int n_classes);
 void CompileClasses(vector<class_struct> &classes, vector<double> data);
 
 int main(){
-    sample_struct sample_1A = init_sample("C:\\Users\\Admin\\projects\\Pendolo\\campione1a.txt");
+    sample_struct sample_1A = init_sample("C:\\Users\\Admin\\projects\\Pendolo\\campionea1a.txt");
     return 0;
 }
 
@@ -37,7 +38,8 @@ sample_struct init_sample(string filename){
     sample.file_name = filename;
     ifstream input_file(filename);
     if (!input_file.is_open()){
-        throw "Error: cannot read the file";
+        cout<<"Error: cannot read the file"<<endl;
+        throw;
     }
     double value, max = 0.0, min = 10.0;
     while (input_file >> value){
