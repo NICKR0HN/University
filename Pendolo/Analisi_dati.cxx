@@ -28,7 +28,11 @@ vector<class_struct> CreateClasses(double min, double delta, int n_classes);
 void CompileClasses(vector<class_struct> &classes, vector<double> data);
 
 int main(){
-    sample_struct sample_1A = init_sample("C:\\Users\\Admin\\projects\\Pendolo\\campionea1a.txt");
+    // string file_path;
+    // while(cin >> file_path){
+    //     sample_struct sample_1A = init_sample(file_path);
+    // }
+    sample_struct sample_1A = init_sample("C:\\Users\\Admin\\projects\\Pendolo\\campione1a.txt");
     return 0;
 }
 
