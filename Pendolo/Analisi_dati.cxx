@@ -39,25 +39,23 @@ sample_struct init_sample(string filename){
     if (!input_file.is_open()){
         throw "Error: cannot read the file";
     }
-    int data_len = 0;
     double value, max = 0.0, min = 10.0;
     while (input_file >> value){
         sample.data.push_back(value);
         if (value > max) max = value;
         if (value < min) min = value;
-        data_len++;
     }
     input_file.close();
 
-    sample.data_len = data_len;
+    sample.data_len = sample.data.size();
     sample.max = max;
     sample.min = min;
     sample.delta = (max - min) / sample.n_classes;
-    sample.mean = mean(sample.data, data_len);
+    sample.mean = mean(sample.data, sample.data_len);
     double summation = GetSummation(sample.data, sample.mean);
-    sample.std_dev = sqrt(summation / data_len);
-    sample.std_dev_corr = sqrt(summation / (data_len - 1.0));
-    sample.std_dev_mean = sample.std_dev_corr / sqrt(data_len);
+    sample.std_dev = sqrt(summation / sample.data_len);
+    sample.std_dev_corr = sqrt(summation / (sample.data_len - 1.0));
+    sample.std_dev_mean = sample.std_dev_corr / sqrt(sample.data_len);
     sample.classes = CreateClasses(min, sample.delta, sample.n_classes);
     return sample;
 }
