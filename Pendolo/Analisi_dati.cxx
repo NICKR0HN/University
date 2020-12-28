@@ -24,7 +24,7 @@ sample_struct init_sample(string filename);
 double mean(vector<double> data, int data_len);
 double GetSummation(vector<double> data, double mean);
 vector<class_struct> CreateClasses(double min, double delta, int n_classes);
-//void CompileClasses()
+void CompileClasses(vector<class_struct> &classes, vector<double> data);
 
 int main(){
     sample_struct sample_1A = init_sample("C:\\Users\\Admin\\projects\\Pendolo\\campione1a.txt");
@@ -57,6 +57,7 @@ sample_struct init_sample(string filename){
     sample.std_dev_corr = sqrt(summation / (sample.data_len - 1.0));
     sample.std_dev_mean = sample.std_dev_corr / sqrt(sample.data_len);
     sample.classes = CreateClasses(min, sample.delta, sample.n_classes);
+    CompileClasses(sample.classes, sample.data);
     return sample;
 }
 
@@ -89,4 +90,16 @@ vector<class_struct> CreateClasses(double min, double delta, int n_classes){
         classes.push_back(myClass);
     }
     return classes;
+}
+
+void CompileClasses(vector<class_struct> &classes, vector<double> data){
+    for(auto c : classes){
+        for(auto d : data){
+            if((c.min <= d) && (d < c.max)){
+                c.freq++;
+            }
+        }
+    }
+    classes[classes.size()-2].freq += classes[classes.size()-1].freq;
+    classes[classes.size()-1].freq = 0;
 }
