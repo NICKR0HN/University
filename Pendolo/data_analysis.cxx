@@ -4,6 +4,7 @@
 #include <string>
 #include <math.h>
 #include <stdexcept>
+#include <iomanip>
 using namespace std;
 
 struct class_struct{
@@ -100,6 +101,18 @@ struct sample_struct {
         classes[classes.size()-1].freq = 0;
         return classes;
     }
+
+    void PrintData(){
+        cout << setprecision(4);
+        cout<<endl << filename <<endl <<endl;
+        cout<< "Data set size: "        << data.size()  << "\t\tNumber of classes: "   << n_classes    << "\t\t\tSize of each class: "<< Delta() <<endl;
+        cout<< "Minimum value: "        << Min()        << "\t\tMaximum value: "       << Max()        << "\t\t\tMean value: "        << Mean() <<endl;
+        cout<< "Std. deviation: "       << StdDev()     << "\t\tCorrected std. dev.: " << StdDevCorr() << "\t\tMean std. dev.: "      << StdDevMean() <<endl <<endl;
+        cout<< string(100, '=') <<endl <<endl;
+    }
+    void PrintGraph(){
+
+    }
 };
 
 sample_struct InitSample(string filename);
@@ -116,6 +129,6 @@ int main(){
     //     sample_struct sample_1A = init_sample(file_path);
     // }
     sample_struct sample_1A = sample_struct("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
-    cout<<sample_1A.Delta();
+    sample_1A.PrintData();
     return 0;
 }
