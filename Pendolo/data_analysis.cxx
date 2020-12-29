@@ -2,7 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <math.h>
+#include <cmath>
 #include <stdexcept>
 #include <iomanip>
 #include <algorithm> 
@@ -12,13 +12,21 @@ struct class_struct{
     double min, max, centroid;
     int freq = 0;
     double gauss;
-    class_struct(double minimum, double maximum, vector<double> data){
+    class_struct(double minimum, double maximum, vector<double> data, double mean, double sigma){
         min = minimum;
         max = maximum;
         centroid = (max + min) / 2.0;
         for(auto c : data)
             if((min <= c) && (c < max))
                 freq++;
+        double den = sqrt(2.0 * M_PI) * sigma;
+        gauss = exp(Exponent(mean, sigma)) / den;
+    }
+    double Exponent(double mean, double sigma){
+        double num = pow((centroid - mean), 2.0);
+        double den = 2.0 * pow(sigma, 2.0);
+        double exponent = (-1.0) * (num / den);
+        return exponent;
     }
 };
 
@@ -101,10 +109,12 @@ struct sample_struct {
     vector<class_struct> Classes(){
         vector<class_struct> classes;
         double delta = Delta();
+        double mean = Mean();
+        double sigma = StdDevCorr();
         for(int i = -1; i <= n_classes; i++){
             double min = Min() + delta * i;
             double max = min + delta;
-            class_struct cl = class_struct(min, max, data);
+            class_struct cl = class_struct(min, max, data, mean, sigma);
             classes.push_back(cl);
         }
         classes[classes.size()-2].freq += classes[classes.size()-1].freq;
@@ -139,14 +149,14 @@ struct sample_struct {
 
         cout.flags(restore);
     }
-    void FileOut(){
+    void WriteFile(){
         string filename_out = filename.substr(0, (filename.length() - 4)) + "_hystogram.txt";
         ofstream output_file (filename_out);
         if (!output_file.is_open())
             throw;
         vector<class_struct> classes = Classes();
         for (auto c : classes)
-            output_file << c.min << '\t' << c.freq <<endl;
+            output_file << c.min << '\t' << c.freq << '\t' << c.centroid << '\t' << c.gauss <<endl;
         output_file.close();
     }
 };
@@ -162,6 +172,6 @@ int main(){
     sample_struct sample_1A = sample_struct("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
     sample_1A.PrintData();
     sample_1A.PrintGraph();
-    sample_1A.FileOut();
+    sample_1A.WriteFile();
     return 0;
 }
