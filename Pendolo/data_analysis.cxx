@@ -92,10 +92,11 @@ struct sample_struct {
     vector<class_struct> Classes(){
         vector<class_struct> classes;
         double delta = Delta();
-        for(int i = -1; i <= data.size(); i++){
+        for(int i = -1; i <= n_classes; i++){
             double min = Min() + delta * i;
             double max = min + delta;
-            class_struct(min, max, data);
+            class_struct cl = class_struct(min, max, data);
+            classes.push_back(cl);
         }
         classes[classes.size()-2].freq += classes[classes.size()-1].freq;
         classes[classes.size()-1].freq = 0;
@@ -103,22 +104,33 @@ struct sample_struct {
     }
 
     void PrintData(){
-        cout << setprecision(4);
+        cout<< setprecision(4);
         cout<<endl << filename <<endl <<endl;
         cout<< "Data set size: "        << data.size()  << "\t\tNumber of classes: "   << n_classes    << "\t\t\tSize of each class: "<< Delta() <<endl;
         cout<< "Minimum value: "        << Min()        << "\t\tMaximum value: "       << Max()        << "\t\t\tMean value: "        << Mean() <<endl;
         cout<< "Std. deviation: "       << StdDev()     << "\t\tCorrected std. dev.: " << StdDevCorr() << "\t\tMean std. dev.: "      << StdDevMean() <<endl <<endl;
         cout<< string(100, '=') <<endl <<endl;
+        cout<< setprecision(0);
     }
     void PrintGraph(){
+        ios::fmtflags restore = cout.flags();
+        cout.setf(ios::fixed, ios::floatfield);
+        cout<<setprecision(3)<<setw(5);
 
+        cout<< "Hystogram" <<endl <<endl;
+        vector<class_struct> classes = Classes();
+        for (auto c : classes){
+            cout<< c.min << " - " << c.max << '\t' << string(c.freq, '#') <<endl;
+        }
+        cout<< string(100, '=') <<endl <<endl;
+
+        cout.flags(restore);
     }
 };
 
 sample_struct InitSample(string filename);
 vector<class_struct> CreateClasses(double min, double delta, int n_classes);
 void CompileClasses(vector<class_struct> &classes, vector<double> data);
-void ConsolePrintData();
 void ConsolePrintGraph();
 void FilePrintData();
 void FilePrintGraph();
@@ -130,5 +142,6 @@ int main(){
     // }
     sample_struct sample_1A = sample_struct("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
     sample_1A.PrintData();
+    sample_1A.PrintGraph();
     return 0;
 }
