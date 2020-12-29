@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdexcept>
 #include <iomanip>
+#include <algorithm> 
 using namespace std;
 
 struct class_struct{
@@ -62,6 +63,14 @@ struct sample_struct {
         double mean = sum / data.size();
         return mean;
     }
+    double Median(){
+        vector<double> sort_data = data;
+        sort(sort_data.begin(), sort_data.end());
+        int half = sort_data.size() / 2;
+        if(sort_data.size()%2)
+            return sort_data[half + 1];
+        return (sort_data[half] + sort_data[half + 1]) / 2;
+    }
     double Delta(){
         double delta = (Max() - Min()) / n_classes;
         return delta;
@@ -106,9 +115,10 @@ struct sample_struct {
     void PrintData(){
         cout<< setprecision(4);
         cout<<endl << filename <<endl <<endl;
-        cout<< "Data set size: "        << data.size()  << "\t\tNumber of classes: "   << n_classes    << "\t\t\tSize of each class: "<< Delta() <<endl;
-        cout<< "Minimum value: "        << Min()        << "\t\tMaximum value: "       << Max()        << "\t\t\tMean value: "        << Mean() <<endl;
-        cout<< "Std. deviation: "       << StdDev()     << "\t\tCorrected std. dev.: " << StdDevCorr() << "\t\tMean std. dev.: "      << StdDevMean() <<endl <<endl;
+        cout<< "Data set size: "    << data.size()  << "\t\tNumber of classes: "    << n_classes    << "\t\t\tSize of each class: "<< Delta()        <<endl;
+        cout<< "Minimum value: "    << Min()        << "\t\tMaximum value: "        << Max()        <<endl;
+        cout<< "Mean value: "       << Mean()       << "\t\tMedian value: "         <<Median()      <<endl;
+        cout<< "Std. deviation: "   << StdDev()     << "\t\tCorrected std. dev.: " << StdDevCorr() << "\t\tMean std. dev.: "      << StdDevMean()   <<endl <<endl;
         cout<< string(100, '-') <<endl <<endl;
         cout<< setprecision(0);
     }
