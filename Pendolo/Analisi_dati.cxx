@@ -22,6 +22,9 @@ struct sample_struct {
 };
 
 sample_struct init_sample(string filename);
+vector<double> ReadFile(string filename);
+double GetMax(vector<double> data);
+double GetMin(vector<double> data);
 double mean(vector<double> data, int data_len);
 double GetSummation(vector<double> data, double mean);
 vector<class_struct> CreateClasses(double min, double delta, int n_classes);
@@ -40,31 +43,54 @@ int main(){
 sample_struct init_sample(string filename){
     sample_struct sample;
     sample.file_name = filename;
-    ifstream input_file(filename);
-    if (!input_file.is_open()){
-        cout<<"Error: cannot read the file"<<endl;
-        throw;
-    }
-    double value, max = 0.0, min = 10.0;
-    while (input_file >> value){
-        sample.data.push_back(value);
-        if (value > max) max = value;
-        if (value < min) min = value;
-    }
-    input_file.close();
-
+    sample.data = ReadFile(sample.file_name);
     sample.data_len = sample.data.size();
-    sample.max = max;
-    sample.min = min;
-    sample.delta = (max - min) / sample.n_classes;
+    sample.max = GetMax(sample.data);
+    sample.min = GetMin(sample.data);
+    sample.delta = (sample.max - sample.min) / sample.n_classes;
     sample.mean = mean(sample.data, sample.data_len);
     double summation = GetSummation(sample.data, sample.mean);
     sample.std_dev = sqrt(summation / sample.data_len);
     sample.std_dev_corr = sqrt(summation / (sample.data_len - 1.0));
     sample.std_dev_mean = sample.std_dev_corr / sqrt(sample.data_len);
-    sample.classes = CreateClasses(min, sample.delta, sample.n_classes);
+    sample.classes = CreateClasses(sample.min, sample.delta, sample.n_classes);
     CompileClasses(sample.classes, sample.data);
     return sample;
+}
+
+vector<double> ReadFile(string filename){
+    vector<double> data;
+    ifstream input_file(filename);
+    if (!input_file.is_open()){
+        cout<<"Error: cannot read the file"<<endl;
+        throw;
+    }
+    double value;
+    while (input_file >> value){
+        data.push_back(value);
+    }
+    input_file.close();
+    return data;
+}
+
+double GetMax(vector<double> data){
+    double max = data[0];
+    for (auto c : data){
+        if (c > max){
+            max = c;
+        }
+    }
+    return max;
+}
+
+double GetMin(vector<double> data){
+    double min = data[0];
+    for (auto c : data){
+        if (c < min){
+            min = c;
+        }
+    }
+    return min;
 }
 
 double mean(vector<double> data, int data_len){
