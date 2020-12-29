@@ -128,10 +128,6 @@ struct sample_struct {
     }
 };
 
-sample_struct InitSample(string filename);
-vector<class_struct> CreateClasses(double min, double delta, int n_classes);
-void CompileClasses(vector<class_struct> &classes, vector<double> data);
-void ConsolePrintGraph();
 void FilePrintData();
 void FilePrintGraph();
 
