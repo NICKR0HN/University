@@ -24,7 +24,7 @@ struct class_struct{
 struct sample_struct {
     string filename;
     vector<double> data;
-    int n_classes = 15;
+    int n_classes = 20;
     vector<class_struct> classes;
 
     sample_struct(string filepath){
@@ -109,19 +109,22 @@ struct sample_struct {
         cout<< "Data set size: "        << data.size()  << "\t\tNumber of classes: "   << n_classes    << "\t\t\tSize of each class: "<< Delta() <<endl;
         cout<< "Minimum value: "        << Min()        << "\t\tMaximum value: "       << Max()        << "\t\t\tMean value: "        << Mean() <<endl;
         cout<< "Std. deviation: "       << StdDev()     << "\t\tCorrected std. dev.: " << StdDevCorr() << "\t\tMean std. dev.: "      << StdDevMean() <<endl <<endl;
-        cout<< string(100, '=') <<endl <<endl;
+        cout<< string(100, '-') <<endl <<endl;
         cout<< setprecision(0);
     }
     void PrintGraph(){
         ios::fmtflags restore = cout.flags();
         cout.setf(ios::fixed, ios::floatfield);
-        cout<<setprecision(3)<<setw(5);
+        cout<< setprecision(3) << setw(5);
 
         cout<< "Hystogram" <<endl <<endl;
         vector<class_struct> classes = Classes();
+        int counter = 0;
         for (auto c : classes){
             cout<< c.min << " - " << c.max << '\t' << string(c.freq, '#') <<endl;
+            counter += c.freq;
         }
+        cout<<endl << "Counted: " << counter <<endl <<endl;
         cout<< string(100, '=') <<endl <<endl;
 
         cout.flags(restore);
