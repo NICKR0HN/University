@@ -186,17 +186,16 @@ int main(){
     sample_1A.PrintData();
     sample_1A.PrintGraph();
     sample_1A.WriteFile("raw");
-    if (sample_1A.Refine().size()){
+    vector<double> removed_data = sample_1A.Refine();
+    if (removed_data.size()){
         PrintEndofFile();
-        PrintRemovedData(sample_1A.Refine());
+        PrintRemovedData(removed_data);
         sample_1A.PrintData();
         sample_1A.PrintGraph();
         sample_1A.WriteFile("refined");
     }
-    else{
-        cout<< "All data is compatible" <<endl;
-        PrintEndofFile();
-    }
+    else cout<< "All data is compatible" <<endl;
+    PrintEndofFile();
     return 0;
 }
 
