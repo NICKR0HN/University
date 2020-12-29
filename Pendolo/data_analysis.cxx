@@ -9,24 +9,100 @@ using namespace std;
 struct class_struct{
     double min, max, centroid;
     int freq = 0;
+    double gauss;
+    class_struct(double minimum, double maximum, vector<double> data){
+        min = minimum;
+        max = maximum;
+        centroid = (max + min) / 2.0;
+        for(auto c : data)
+            if((min <= c) && (c < max))
+                freq++;
+    }
 };
 
 struct sample_struct {
     string filename;
     vector<double> data;
-    double max, min, mean, delta;
-    double std_dev, std_dev_corr, std_dev_mean;
     int n_classes = 15;
     vector<class_struct> classes;
+
+    sample_struct(string filepath){
+        filename = filepath;
+        ReadFile();
+    }
+
+    void ReadFile(){
+        ifstream input_file(filename);
+        if (!input_file.is_open())
+            throw;
+        double value;
+        while (input_file >> value)
+            data.push_back(value);
+        input_file.close();
+    }
+    double Max(){
+        double max = data[0];
+        for (auto c : data)
+            if (c > max)
+                max = c;
+        return max;
+    }
+    double Min(){
+        double min = data[0];
+        for (auto c : data)
+            if (c < min)
+                min = c;
+        return min;
+    }
+    double Mean(){
+        double sum = 0.0;
+        for (auto c : data)
+            sum += c;
+        double mean = sum / data.size();
+        return mean;
+    }
+    double Delta(){
+        double delta = (Max() - Min()) / n_classes;
+        return delta;
+    }
+    double Summation(){
+        double summation = 0.0;
+        double m = Mean();
+        for(auto c : data)
+            summation += pow((c - m), 2.0);
+        return summation;
+    }
+    double GetStdDev(int data_len){
+        double std_dev = sqrt(Summation() / data_len);
+        return std_dev;
+    }
+    double StdDev(){
+        double std_dev = GetStdDev(data.size());
+        return std_dev;
+    }
+    double StdDevCorr(){
+        double std_dev_corr = GetStdDev(data.size() - 1);
+        return std_dev_corr;
+    }
+    double StdDevMean(){
+        double std_dev_mean = StdDevCorr()/sqrt(data.size());
+        return std_dev_mean;
+    }
+    vector<class_struct> Classes(){
+        vector<class_struct> classes;
+        double delta = Delta();
+        for(int i = -1; i <= data.size(); i++){
+            double min = Min() + delta * i;
+            double max = min + delta;
+            class_struct(min, max, data);
+        }
+        classes[classes.size()-2].freq += classes[classes.size()-1].freq;
+        classes[classes.size()-1].freq = 0;
+        return classes;
+    }
 };
 
 sample_struct InitSample(string filename);
-vector<double> ReadFile(string filename);
-double GetMax(vector<double> data);
-double GetMin(vector<double> data);
-double Mean(vector<double> data, int data_len);
-double GetSummation(vector<double> data, double mean);
-double GetStdDev(double summation, int data_len);
 vector<class_struct> CreateClasses(double min, double delta, int n_classes);
 void CompileClasses(vector<class_struct> &classes, vector<double> data);
 void ConsolePrintData();
@@ -39,109 +115,7 @@ int main(){
     // while(cin >> file_path){
     //     sample_struct sample_1A = init_sample(file_path);
     // }
-    sample_struct sample_1A = InitSample("C:\\Users\\Admin\\projects\\Pendolo\\campione1a.txt");
+    sample_struct sample_1A = sample_struct("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
+    cout<<sample_1A.Delta();
     return 0;
-}
-
-
-sample_struct InitSample(string filename){
-    sample_struct sample;
-    sample.filename = filename;
-    sample.data = ReadFile(sample.filename);
-    sample.max = GetMax(sample.data);
-    sample.min = GetMin(sample.data);
-    sample.delta = (sample.max - sample.min) / sample.n_classes;
-    sample.mean = Mean(sample.data, sample.data.size());
-    double summation = GetSummation(sample.data, sample.mean);
-    sample.std_dev = GetStdDev(summation, sample.data.size());
-    sample.std_dev_corr = GetStdDev(summation, (sample.data.size() - 1.0));
-    sample.std_dev_mean = sample.std_dev_corr / sqrt(sample.data.size());
-    sample.classes = CreateClasses(sample.min, sample.delta, sample.n_classes);
-    CompileClasses(sample.classes, sample.data);
-    return sample;
-}
-
-vector<double> ReadFile(string filename){
-    vector<double> data;
-    ifstream input_file(filename);
-    if (!input_file.is_open()){
-        cout<<"Error: cannot read the file"<<endl;
-        throw;
-    }
-    double value;
-    while (input_file >> value){
-        data.push_back(value);
-    }
-    input_file.close();
-    return data;
-}
-
-double GetMax(vector<double> data){
-    double max = data[0];
-    for (auto c : data){
-        if (c > max){
-            max = c;
-        }
-    }
-    return max;
-}
-
-double GetMin(vector<double> data){
-    double min = data[0];
-    for (auto c : data){
-        if (c < min){
-            min = c;
-        }
-    }
-    return min;
-}
-
-double Mean(vector<double> data, int data_len){
-    double sum = 0.0;
-    for (auto c : data){
-        sum += c;
-    }
-    double mean = sum / data_len;
-    return mean;
-}
- 
-double GetSummation(vector<double> data, double mean){
-    double summation = 0.0;
-    for(auto c : data){
-        summation += pow((c - mean), 2.0);
-    }
-    return summation;
-}
-
-double GetStdDev(double summation, int data_len){
-    double std_dev = sqrt(summation / data_len);
-    return std_dev;
-}
-
-vector<class_struct> CreateClasses(double min, double delta, int n_classes){
-    vector<class_struct> classes;
-    class_struct myClass;
-    myClass.min = min - delta;
-    myClass.max = min;
-    myClass.centroid = (myClass.min + myClass.max)/2.0;
-    classes.push_back(myClass);
-    for (int i = 0; i <= n_classes; i++){
-        myClass.min = min + delta * i;
-        myClass.max = myClass.min + delta;
-        myClass.centroid = (myClass.min + myClass.max)/2.0;
-        classes.push_back(myClass);
-    }
-    return classes;
-}
-
-void CompileClasses(vector<class_struct> &classes, vector<double> data){
-    for(auto c : classes){
-        for(auto d : data){
-            if((c.min <= d) && (d < c.max)){
-                c.freq++;
-            }
-        }
-    }
-    classes[classes.size()-2].freq += classes[classes.size()-1].freq;
-    classes[classes.size()-1].freq = 0;
 }
