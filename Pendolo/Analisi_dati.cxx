@@ -7,12 +7,12 @@
 using namespace std;
 
 struct class_struct{
-    double min, max;
+    double min, max, centroid;
     int freq = 0;
 };
 
 struct sample_struct {
-    string file_name;
+    string filename;
     vector<double> data;
     int data_len;
     double max, min, mean, delta;
@@ -21,11 +21,11 @@ struct sample_struct {
     vector<class_struct> classes;
 };
 
-sample_struct init_sample(string filename);
+sample_struct InitSample(string filename);
 vector<double> ReadFile(string filename);
 double GetMax(vector<double> data);
 double GetMin(vector<double> data);
-double mean(vector<double> data, int data_len);
+double Mean(vector<double> data, int data_len);
 double GetSummation(vector<double> data, double mean);
 vector<class_struct> CreateClasses(double min, double delta, int n_classes);
 void CompileClasses(vector<class_struct> &classes, vector<double> data);
@@ -35,20 +35,20 @@ int main(){
     // while(cin >> file_path){
     //     sample_struct sample_1A = init_sample(file_path);
     // }
-    sample_struct sample_1A = init_sample("C:\\Users\\Admin\\projects\\Pendolo\\campione1a.txt");
+    sample_struct sample_1A = InitSample("C:\\Users\\Admin\\projects\\Pendolo\\campione1a.txt");
     return 0;
 }
 
 
-sample_struct init_sample(string filename){
+sample_struct InitSample(string filename){
     sample_struct sample;
-    sample.file_name = filename;
-    sample.data = ReadFile(sample.file_name);
+    sample.filename = filename;
+    sample.data = ReadFile(sample.filename);
     sample.data_len = sample.data.size();
     sample.max = GetMax(sample.data);
     sample.min = GetMin(sample.data);
     sample.delta = (sample.max - sample.min) / sample.n_classes;
-    sample.mean = mean(sample.data, sample.data_len);
+    sample.mean = Mean(sample.data, sample.data_len);
     double summation = GetSummation(sample.data, sample.mean);
     sample.std_dev = sqrt(summation / sample.data_len);
     sample.std_dev_corr = sqrt(summation / (sample.data_len - 1.0));
@@ -93,7 +93,7 @@ double GetMin(vector<double> data){
     return min;
 }
 
-double mean(vector<double> data, int data_len){
+double Mean(vector<double> data, int data_len){
     double sum = 0.0;
     for (auto c : data){
         sum += c;
@@ -115,10 +115,12 @@ vector<class_struct> CreateClasses(double min, double delta, int n_classes){
     class_struct myClass;
     myClass.min = min - delta;
     myClass.max = min;
+    myClass.centroid = (myClass.min + myClass.max)/2.0;
     classes.push_back(myClass);
     for (int i = 0; i <= n_classes; i++){
         myClass.min = min + delta * i;
         myClass.max = myClass.min + delta;
+        myClass.centroid = (myClass.min + myClass.max)/2.0;
         classes.push_back(myClass);
     }
     return classes;
