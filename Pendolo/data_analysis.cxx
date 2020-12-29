@@ -129,6 +129,16 @@ struct sample_struct {
 
         cout.flags(restore);
     }
+    void FileOut(){
+        string filename_out = filename.substr(0, (filename.length() - 4)) + "_hystogram.txt";
+        ofstream output_file (filename_out);
+        if (!output_file.is_open())
+            throw;
+        vector<class_struct> classes = Classes();
+        for (auto c : classes)
+            output_file << c.min << '\t' << c.freq <<endl;
+        output_file.close();
+    }
 };
 
 void FilePrintData();
@@ -142,5 +152,6 @@ int main(){
     sample_struct sample_1A = sample_struct("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
     sample_1A.PrintData();
     sample_1A.PrintGraph();
+    sample_1A.FileOut();
     return 0;
 }
