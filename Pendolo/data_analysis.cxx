@@ -145,12 +145,11 @@ struct sample_struct {
             counter += c.freq;
         }
         cout<<endl << "Counted: " << counter <<endl <<endl;
-        cout<< string(100, '=') <<endl <<endl;
 
         cout.flags(restore);
     }
-    void WriteFile(){
-        string filename_out = filename.substr(0, (filename.length() - 4)) + "_hystogram.txt";
+    void WriteFile(string stage){
+        string filename_out = filename.substr(0, (filename.length() - 4)) + "_hystogram_" + stage + ".txt";
         ofstream output_file (filename_out);
         if (!output_file.is_open())
             throw;
@@ -159,19 +158,55 @@ struct sample_struct {
             output_file << c.min << '\t' << c.freq << '\t' << c.centroid << '\t' << c.gauss <<endl;
         output_file.close();
     }
+
+    vector<double> Refine(){
+        vector<double> new_data, removed_data;
+        double three_sigma = 3.0 * StdDevCorr();
+        double mean = Mean();
+        for (auto c : data){
+            if(c < mean - three_sigma || c > mean + three_sigma)
+                removed_data.push_back(c);
+            else new_data.push_back(c);
+        }
+        data = new_data;
+        return removed_data;
+    }
 };
 
-void FilePrintData();
-void FilePrintGraph();
+void PrintRemovedData(vector<double> vect);
+void PrintEndofFile();
 
 int main(){
     // string file_path;
     // while(cin >> file_path){
     //     sample_struct sample_1A = init_sample(file_path);
     // }
+    PrintEndofFile();
     sample_struct sample_1A = sample_struct("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
     sample_1A.PrintData();
     sample_1A.PrintGraph();
-    sample_1A.WriteFile();
+    sample_1A.WriteFile("raw");
+    if (sample_1A.Refine().size()){
+        PrintEndofFile();
+        PrintRemovedData(sample_1A.Refine());
+        sample_1A.PrintData();
+        sample_1A.PrintGraph();
+        sample_1A.WriteFile("refined");
+    }
+    else{
+        cout<< "All data is compatible" <<endl;
+        PrintEndofFile();
+    }
     return 0;
+}
+
+void PrintRemovedData(vector<double> vect){
+    cout<< "Removed data:"<<endl;
+    for (auto c : vect)
+        cout<< c <<'\t';
+    cout<<endl;
+}
+
+void PrintEndofFile(){
+    cout<<endl << string(100, '=') <<endl <<endl;
 }
