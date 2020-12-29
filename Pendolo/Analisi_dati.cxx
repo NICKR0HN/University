@@ -14,7 +14,6 @@ struct class_struct{
 struct sample_struct {
     string filename;
     vector<double> data;
-    int data_len;
     double max, min, mean, delta;
     double std_dev, std_dev_corr, std_dev_mean;
     int n_classes = 15;
@@ -27,8 +26,13 @@ double GetMax(vector<double> data);
 double GetMin(vector<double> data);
 double Mean(vector<double> data, int data_len);
 double GetSummation(vector<double> data, double mean);
+double GetStdDev(double summation, int data_len);
 vector<class_struct> CreateClasses(double min, double delta, int n_classes);
 void CompileClasses(vector<class_struct> &classes, vector<double> data);
+void ConsolePrintData();
+void ConsolePrintGraph();
+void FilePrintData();
+void FilePrintGraph();
 
 int main(){
     // string file_path;
@@ -44,15 +48,14 @@ sample_struct InitSample(string filename){
     sample_struct sample;
     sample.filename = filename;
     sample.data = ReadFile(sample.filename);
-    sample.data_len = sample.data.size();
     sample.max = GetMax(sample.data);
     sample.min = GetMin(sample.data);
     sample.delta = (sample.max - sample.min) / sample.n_classes;
-    sample.mean = Mean(sample.data, sample.data_len);
+    sample.mean = Mean(sample.data, sample.data.size());
     double summation = GetSummation(sample.data, sample.mean);
-    sample.std_dev = sqrt(summation / sample.data_len);
-    sample.std_dev_corr = sqrt(summation / (sample.data_len - 1.0));
-    sample.std_dev_mean = sample.std_dev_corr / sqrt(sample.data_len);
+    sample.std_dev = GetStdDev(summation, sample.data.size());
+    sample.std_dev_corr = GetStdDev(summation, (sample.data.size() - 1.0));
+    sample.std_dev_mean = sample.std_dev_corr / sqrt(sample.data.size());
     sample.classes = CreateClasses(sample.min, sample.delta, sample.n_classes);
     CompileClasses(sample.classes, sample.data);
     return sample;
@@ -108,6 +111,11 @@ double GetSummation(vector<double> data, double mean){
         summation += pow((c - mean), 2.0);
     }
     return summation;
+}
+
+double GetStdDev(double summation, int data_len){
+    double std_dev = sqrt(summation / data_len);
+    return std_dev;
 }
 
 vector<class_struct> CreateClasses(double min, double delta, int n_classes){
