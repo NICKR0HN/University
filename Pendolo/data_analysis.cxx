@@ -173,6 +173,7 @@ struct sample_struct {
     }
 };
 
+void FileAnalysis(string filepath);
 void PrintRemovedData(vector<double> vect);
 void PrintEndofFile();
 
@@ -182,21 +183,25 @@ int main(){
     //     sample_struct sample_1A = init_sample(file_path);
     // }
     PrintEndofFile();
-    sample_struct sample_1A = sample_struct("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
-    sample_1A.PrintData();
-    sample_1A.PrintGraph();
-    sample_1A.WriteFile("raw");
-    vector<double> removed_data = sample_1A.Refine();
+    FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
+    return 0;
+}
+
+void FileAnalysis(string filepath){
+    sample_struct sample = sample_struct(filepath);
+    sample.PrintData();
+    sample.PrintGraph();
+    sample.WriteFile("raw");
+    vector<double> removed_data = sample.Refine();
     if (removed_data.size()){
         PrintEndofFile();
         PrintRemovedData(removed_data);
-        sample_1A.PrintData();
-        sample_1A.PrintGraph();
-        sample_1A.WriteFile("refined");
+        sample.PrintData();
+        sample.PrintGraph();
+        sample.WriteFile("refined");
     }
     else cout<< "All data is compatible" <<endl;
     PrintEndofFile();
-    return 0;
 }
 
 void PrintRemovedData(vector<double> vect){
