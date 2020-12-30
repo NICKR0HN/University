@@ -111,11 +111,13 @@ struct sample_struct {
         double delta = Delta();
         double mean = Mean();
         double sigma = StdDevCorr();
-        for(int i = -1; i <= n_classes; i++){
-            double min = Min() + delta * i;
+        double min = Min() - delta;
+        double top = Max();
+        while(min <= top){
             double max = min + delta;
             class_struct cl = class_struct(min, max, data, mean, sigma);
             classes.push_back(cl);
+            min += delta;
         }
         classes[classes.size()-2].freq += classes[classes.size()-1].freq;
         classes[classes.size()-1].freq = 0;
@@ -198,14 +200,15 @@ void FileAnalysis(string filepath){
     sample.PrintGraph();
     sample.WriteFile("raw");
     vector<double> removed_data = sample.Refine();
-    if (removed_data.size()){
+    while (removed_data.size()){
         PrintEndofFile();
         PrintRemovedData(removed_data);
         sample.PrintData();
         sample.PrintGraph();
         sample.WriteFile("refined");
+        removed_data = sample.Refine();
     }
-    else cout<< "All data is compatible" <<endl;
+    cout<< "All data is compatible" <<endl;
     PrintEndofFile();
 }
 
