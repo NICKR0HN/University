@@ -38,7 +38,6 @@ struct sample_struct {
 
     sample_struct(string filepath){
         filename = filepath;
-        ReadFile();
     }
 
     void ReadFile(){
@@ -106,6 +105,18 @@ struct sample_struct {
         double std_dev_mean = StdDevCorr()/sqrt(data.size());
         return std_dev_mean;
     }
+
+    void NormDev(){
+        vector<double> old_data = data;
+        double sigma = StdDevCorr();
+        double mean = Mean();
+        data.clear();
+        for (auto c : old_data){
+            double norm_dev = (c - mean) / sigma;
+            data.push_back(norm_dev);
+        }
+    }
+
     vector<class_struct> Classes(){
         vector<class_struct> classes;
         double delta = Delta();
@@ -176,7 +187,7 @@ struct sample_struct {
     }
 };
 
-sample_struct FileAnalysis(string filepath);
+sample_struct FileAnalysis(string filepath, bool use_norm_dev = false);
 void PrintRemovedData(vector<double> vect);
 void PrintEndofFile();
 
@@ -186,17 +197,21 @@ int main(){
     //     sample_struct sample_1A = init_sample(file_path);
     // }
     PrintEndofFile();
-    sample_struct sample_1a = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
-    sample_struct sample_1b = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1b.txt");
-    sample_struct sample_1c = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1c.txt");
-    sample_struct sample_4a = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4a.txt");
-    sample_struct sample_4b = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4b.txt");
-    sample_struct sample_4c = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4c.txt");
+    // sample_struct sample_1a = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
+    // sample_struct sample_1b = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1b.txt");
+    sample_struct sample_1ab = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1ab.txt", true);
+    // sample_struct sample_1c = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1c.txt");
+    // sample_struct sample_4a = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4a.txt");
+    // sample_struct sample_4b = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4b.txt");
+    // sample_struct sample_4c = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4c.txt");
     return 0;
 }
 
-sample_struct FileAnalysis(string filepath){
+sample_struct FileAnalysis(string filepath, bool use_norm_dev){
     sample_struct sample = sample_struct(filepath);
+    sample.ReadFile();
+    if (use_norm_dev)
+        sample.NormDev();
     sample.PrintData();
     sample.PrintGraph();
     sample.WriteFile("raw");
