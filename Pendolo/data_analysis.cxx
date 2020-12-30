@@ -214,9 +214,11 @@ void FileAnalysis(string filepath){
 
 void PrintRemovedData(vector<double> vect){
     cout<< "Removed data:"<<endl;
+    cout<< setprecision(4);
     for (auto c : vect)
         cout<< c <<'\t';
     cout<<endl;
+    cout<< setprecision(0);
 }
 
 void PrintEndofFile(){
