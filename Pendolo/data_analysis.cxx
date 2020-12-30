@@ -112,12 +112,13 @@ struct sample_struct {
         double mean = Mean();
         double sigma = StdDevCorr();
         double min = Min() - delta;
+        double max = Min();
         double top = Max() + (delta / 2);
-        while(min <= top){
-            double max = min + delta;
+        while(min < top){
             class_struct cl = class_struct(min, max, data, mean, sigma);
             classes.push_back(cl);
-            min += delta;
+            min = max;
+            max = min + delta;
         }
         classes[classes.size()-2].freq += classes[classes.size()-1].freq;
         classes[classes.size()-1].freq = 0;
@@ -175,7 +176,7 @@ struct sample_struct {
     }
 };
 
-void FileAnalysis(string filepath);
+sample_struct FileAnalysis(string filepath);
 void PrintRemovedData(vector<double> vect);
 void PrintEndofFile();
 
@@ -185,16 +186,16 @@ int main(){
     //     sample_struct sample_1A = init_sample(file_path);
     // }
     PrintEndofFile();
-    FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
-    FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1b.txt");
-    FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1c.txt");
-    FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4a.txt");
-    FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4b.txt");
-    FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4c.txt");
+    sample_struct sample_1a = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
+    sample_struct sample_1b = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1b.txt");
+    sample_struct sample_1c = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1c.txt");
+    sample_struct sample_4a = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4a.txt");
+    sample_struct sample_4b = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4b.txt");
+    sample_struct sample_4c = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4c.txt");
     return 0;
 }
 
-void FileAnalysis(string filepath){
+sample_struct FileAnalysis(string filepath){
     sample_struct sample = sample_struct(filepath);
     sample.PrintData();
     sample.PrintGraph();
@@ -210,6 +211,7 @@ void FileAnalysis(string filepath){
     }
     cout<< "All data is compatible" <<endl;
     PrintEndofFile();
+    return sample;
 }
 
 void PrintRemovedData(vector<double> vect){
