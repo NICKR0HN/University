@@ -112,7 +112,7 @@ struct sample_struct {
         double mean = Mean();
         double sigma = StdDevCorr();
         double min = Min() - delta;
-        double top = Max();
+        double top = Max() + (delta / 2);
         while(min <= top){
             double max = min + delta;
             class_struct cl = class_struct(min, max, data, mean, sigma);
