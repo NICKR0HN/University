@@ -162,14 +162,16 @@ struct sample_struct {
 
         cout.flags(restore);
     }
-    void WriteFile(string stage){
+    void WriteFile(string stage, bool use_norm_dev = 0){
         string filename_out = filename.substr(0, (filename.length() - 4)) + "_hystogram_" + stage + ".txt";
         ofstream output_file (filename_out);
         if (!output_file.is_open())
             throw;
+        int norm = 1;
+        if (use_norm_dev) norm = data.size();
         vector<class_struct> classes = Classes();
         for (auto c : classes)
-            output_file << c.min << '\t' << c.freq << '\t' << c.centroid << '\t' << c.gauss <<endl;
+            output_file << c.min << '\t' << 1.0 * c.freq / norm << '\t' << c.centroid << '\t' << c.gauss <<endl;
         output_file.close();
     }
 
@@ -214,7 +216,7 @@ sample_struct FileAnalysis(string filepath, bool use_norm_dev){
         sample.NormDev();
     sample.PrintData();
     sample.PrintGraph();
-    sample.WriteFile("raw");
+    sample.WriteFile("raw", use_norm_dev);
     vector<double> removed_data = sample.Refine();
     while (removed_data.size()){
         PrintEndofFile();
