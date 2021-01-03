@@ -8,10 +8,12 @@
 #include <algorithm> 
 using namespace std;
 
+//dichiarazione struttura delle classi dell'istogramma
 struct class_struct{
     double min, max, centroid;
     int freq = 0;
     double gauss;
+    //costruttore della struttura, usata quando viene inizializzata una nuova struttura
     class_struct(double minimum, double maximum, vector<double> data, double mean, double sigma){
         min = minimum;
         max = maximum;
@@ -30,16 +32,20 @@ struct class_struct{
     }
 };
 
+// dichiarazione della struttura per ciascun campione
 struct sample_struct {
+    // variabili stabili della struttura
     string filename;
     vector<double> data;
     int n_classes = 20;
     vector<class_struct> classes;
 
+    // costruttore
     sample_struct(string filepath){
         filename = filepath;
     }
 
+    // acquisizione dei dati
     void ReadFile(){
         ifstream input_file(filename);
         if (!input_file.is_open())
@@ -49,6 +55,9 @@ struct sample_struct {
             data.push_back(value);
         input_file.close();
     }
+
+    // variabili non costanti della struttura
+    // vengono calcolate quando servono senza salvarle, in modo che siano sempre aggiornate
     double Max(){
         double max = data[0];
         for (auto c : data)
@@ -106,6 +115,9 @@ struct sample_struct {
         return std_dev_mean;
     }
 
+    // calcolo della deviazione standard normalizzata
+    // viene attivata solo se è indicato 'true' in FileAnalysis() nel main()
+    // sostituisce i dati con i relativi scarti normalizzati
     void NormDev(){
         vector<double> old_data = data;
         double sigma = StdDevCorr();
@@ -117,6 +129,7 @@ struct sample_struct {
         }
     }
 
+    // creazione delle classi per costruire l'istogramma
     vector<class_struct> Classes(){
         vector<class_struct> classes;
         double delta = Delta();
@@ -136,6 +149,7 @@ struct sample_struct {
         return classes;
     }
 
+    // stampa delle informazioni sul campione sulla console
     void PrintData(){
         cout<< setprecision(4);
         cout << filename <<endl <<endl;
@@ -146,6 +160,7 @@ struct sample_struct {
         cout<< string(100, '-') <<endl <<endl;
         cout<< setprecision(0);
     }
+    // stampa dell'istogramma sulla console
     void PrintGraph(){
         ios::fmtflags restore = cout.flags();
         cout.setf(ios::fixed, ios::floatfield);
@@ -162,6 +177,7 @@ struct sample_struct {
 
         cout.flags(restore);
     }
+    // scrittura su file dei valori delle classi
     void WriteFile(string stage, bool use_norm_dev = 0){
         string filename_out = filename.substr(0, (filename.length() - 4)) + "_hystogram_" + stage + ".txt";
         ofstream output_file (filename_out);
@@ -175,6 +191,7 @@ struct sample_struct {
         output_file.close();
     }
 
+    // eliminazione dei dati secondo la regola del 3-sigma
     vector<double> Refine(){
         vector<double> new_data, removed_data;
         double three_sigma = 3.0 * StdDevCorr();
@@ -189,26 +206,25 @@ struct sample_struct {
     }
 };
 
+// prototipo delle funzioni
 sample_struct FileAnalysis(string filepath, bool use_norm_dev = false);
 void PrintRemovedData(vector<double> vect);
 void PrintEndofFile();
 
 int main(){
-    // string file_path;
-    // while(cin >> file_path){
-    //     sample_struct sample_1A = init_sample(file_path);
-    // }
     PrintEndofFile();
     // sample_struct sample_1a = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
     // sample_struct sample_1b = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1b.txt");
-    sample_struct sample_1ab = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1ab.txt", true);
+    // sample_struct sample_1ab = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1ab.txt");
     // sample_struct sample_1c = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1c.txt");
     // sample_struct sample_4a = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4a.txt");
     // sample_struct sample_4b = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4b.txt");
     // sample_struct sample_4c = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4c.txt");
+    sample_struct sample_4ab = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4ab.txt");
     return 0;
 }
 
+// step applicati per ogni set di dati
 sample_struct FileAnalysis(string filepath, bool use_norm_dev){
     sample_struct sample = sample_struct(filepath);
     sample.ReadFile();
@@ -218,7 +234,7 @@ sample_struct FileAnalysis(string filepath, bool use_norm_dev){
     sample.PrintGraph();
     sample.WriteFile("raw", use_norm_dev);
     vector<double> removed_data = sample.Refine();
-    while (removed_data.size()){
+    while (removed_data.size() && !use_norm_dev){
         PrintEndofFile();
         PrintRemovedData(removed_data);
         sample.PrintData();
@@ -231,6 +247,7 @@ sample_struct FileAnalysis(string filepath, bool use_norm_dev){
     return sample;
 }
 
+//stampa dei dati scartati con i 3-sigma
 void PrintRemovedData(vector<double> vect){
     cout<< "Removed data:"<<endl;
     cout<< setprecision(4);
