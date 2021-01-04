@@ -87,10 +87,12 @@ struct sample_struct {
             return sort_data[half + 1];
         return (sort_data[half] + sort_data[half + 1]) / 2;
     }
+    // ampiezza delle classi
     double Delta(){
         double delta = (Max() - Min()) / n_classes;
         return delta;
     }
+    // sommatoria del quadrato degli scarti
     double Summation(){
         double summation = 0.0;
         double m = Mean();
@@ -98,18 +100,22 @@ struct sample_struct {
             summation += pow((c - m), 2.0);
         return summation;
     }
+    // formula generica della deviazione standard
     double GetStdDev(int data_len){
         double std_dev = sqrt(Summation() / data_len);
         return std_dev;
     }
+    // deviazione standard campionaria
     double StdDev(){
         double std_dev = GetStdDev(data.size());
         return std_dev;
     }
+    // deviazione standard singola misura
     double StdDevCorr(){
         double std_dev_corr = GetStdDev(data.size() - 1);
         return std_dev_corr;
     }
+    // deviazione standard sulla media
     double StdDevMean(){
         double std_dev_mean = StdDevCorr()/sqrt(data.size());
         return std_dev_mean;
