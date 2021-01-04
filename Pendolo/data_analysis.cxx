@@ -159,10 +159,12 @@ struct sample_struct {
     void PrintData(){
         cout<< setprecision(4);
         cout << filename <<endl <<endl;
-        cout<< "Data set size: "    << data.size()  << "\t\tNumber of classes: "    << n_classes    << "\t\t\tSize of each class: "<< Delta()        <<endl;
+        cout<< "Data set size: "    << data.size()  << "\t\tNumber of classes: "    << n_classes    
+            << "\t\t\tSize of each class: "<< Delta()        <<endl;
         cout<< "Minimum value: "    << Min()        << "\t\tMaximum value: "        << Max()        <<endl;
         cout<< "Mean value: "       << Mean()       << "\t\tMedian value: "         <<Median()      <<endl;
-        cout<< "Std. deviation: "   << StdDev()     << "\t\tCorrected std. dev.: " << StdDevCorr() << "\t\tMean std. dev.: "      << StdDevMean()   <<endl <<endl;
+        cout<< "Std. deviation: "   << StdDev()     << "\t\tCorrected std. dev.: " << StdDevCorr() 
+            << "\t\tMean std. dev.: "      << StdDevMean()   <<endl <<endl;
         cout<< string(100, '-') <<endl <<endl;
         cout<< setprecision(0);
     }
