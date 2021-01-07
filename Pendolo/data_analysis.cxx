@@ -14,7 +14,7 @@ struct class_struct{
     int freq = 0;
     double gauss;
     //costruttore della struttura, usata quando viene inizializzata una nuova struttura
-    class_struct(double minimum, double maximum, vector<double> data, double mean, double sigma){
+    class_struct(double minimum, double maximum, vector<double> data, double mean, double sigma, double delta, int n_classes){
         min = minimum;
         max = maximum;
         centroid = (max + min) / 2.0;
@@ -22,7 +22,8 @@ struct class_struct{
             if((min <= c) && (c < max))
                 freq++;
         double den = sqrt(2.0 * M_PI) * sigma;
-        gauss = exp(Exponent(mean, sigma)) / den;
+        double gaussian = exp(Exponent(mean, sigma)) / den;
+        gauss = gauss * delta * n_classes;
     }
     double Exponent(double mean, double sigma){
         double num = pow((centroid - mean), 2.0);
@@ -145,7 +146,7 @@ struct sample_struct {
         double max = Min();
         double top = Max() + (delta / 2);
         while(min < top){
-            class_struct cl = class_struct(min, max, data, mean, sigma);
+            class_struct cl = class_struct(min, max, data, mean, sigma, delta, n_classes);
             classes.push_back(cl);
             min = max;
             max = min + delta;
