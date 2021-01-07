@@ -224,12 +224,12 @@ int main(){
     PrintEndofFile();
     sample_struct sample_1a = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1a.txt");
     sample_struct sample_1b = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1b.txt");
-    sample_struct sample_1ab = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1ab.txt");
+    sample_struct sample_1ab_normdev = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1ab.txt", true);
     sample_struct sample_1c = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione1c.txt");
     sample_struct sample_4a = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4a.txt");
     sample_struct sample_4b = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4b.txt");
     sample_struct sample_4c = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4c.txt");
-    sample_struct sample_4ab = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4ab.txt");
+    sample_struct sample_4ab_normdev = FileAnalysis("C:\\Users\\Admin\\projects\\University\\Pendolo\\Data\\campione4ab.txt", true);
     return 0;
 }
 
