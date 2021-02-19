@@ -13,12 +13,14 @@ using namespace std;
 // dichiarazione della struttura per ciascun campione
 struct sample_struct {
     // variabili stabili della struttura
-    string filepath;
+    string filename, filepath;
     vector<double> data;
-    double position;
+    double distance;
     // costruttore
-    sample_struct(string filename){
-        filepath = "./data/"+filename;
+    sample_struct(string name){
+        filename = name;
+        filepath = "./data/"+name;
+        ReadFile();
     }
 
     // acquisizione dei dati
@@ -29,7 +31,7 @@ struct sample_struct {
             return;
         }
         double value;
-        input_file >> position;
+        input_file >> distance;
         while (input_file >> value)
             data.push_back(value);
         input_file.close();
@@ -109,13 +111,28 @@ struct sample_struct {
         data = new_data;
         return removed_data;
     }
+
+    // stampa delle informazioni sul campione sulla console
+    void PrintData(){
+        cout<< setprecision(4);
+        cout<< filename <<endl <<endl;
+        cout<< "Data set size: "    << data.size()  << "\t\tDistance: "             << distance     <<endl;
+        cout<< "Minimum value: "    << Min()        << "\t\tMaximum value: "        << Max()        <<endl;
+        cout<< "Mean value: "       << Mean()       << "\t\tMedian value: "         <<Median()      <<endl;
+        cout<< "Std. deviation: "   << StdDev()     << "\tCorrected std. dev.: " << StdDevCorr() 
+            << "\t\tMean std. dev.: "      << StdDevMean()   <<endl <<endl;
+        cout<< string(100, '-') <<endl <<endl;
+        cout<< setprecision(0);
+    }
 };
 
 vector<string> GetFiles();
+vector<sample_struct> ElaborateData(vector<string>);
+
 
 int main(){
     vector<string> filenames = GetFiles();
-    
+    vector<sample_struct> samples = ElaborateData(filenames);
     return 0;
 }
 
@@ -126,11 +143,20 @@ vector<string> GetFiles(){
 
     while ((entry = readdir(dir)) != NULL)
         filenames.push_back(entry->d_name);
+    closedir(dir);
     filenames.pop_back();
     filenames.pop_back();
     cout<< "Reading files:" <<endl;
     for (auto c : filenames)
         cout<< c <<endl;
-    closedir(dir);
+    cout<<filenames.size();
     return filenames;
+}
+
+vector<sample_struct> ElaborateData(vector<string> filenames){
+    vector<sample_struct> data_out;
+    for (auto c : filenames){
+        sample_struct sample = sample_struct(c);
+        sample.PrintData();
+    }
 }
