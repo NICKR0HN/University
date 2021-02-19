@@ -149,7 +149,7 @@ vector<string> GetFiles(){
     cout<< "Reading files:" <<endl;
     for (auto c : filenames)
         cout<< c <<endl;
-    cout<<filenames.size();
+    cout<<"Total: " <<filenames.size() <<endl;
     return filenames;
 }
 
@@ -159,4 +159,5 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
         sample_struct sample = sample_struct(c);
         sample.PrintData();
     }
+    return data_out;
 }
