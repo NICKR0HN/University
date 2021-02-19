@@ -3,53 +3,33 @@
 #include <vector>
 #include <string>
 #include <cmath>
-#include <stdexcept>
-#include <iomanip>
-#include <algorithm> 
-using namespace std;
+#include <iomanip>      //sig. figures
+#include <algorithm>    //sort()
+#include <dirent.h>     //get file names
+#include <sys/types.h>
 
-//dichiarazione struttura delle classi dell'istogramma
-struct class_struct{
-    double min, max, centroid;
-    int freq = 0;
-    double gauss;
-    //costruttore della struttura, usata quando viene inizializzata una nuova struttura
-    class_struct(double minimum, double maximum, vector<double> data, double mean, double sigma, double delta, int n_classes){
-        min = minimum;
-        max = maximum;
-        centroid = (max + min) / 2.0;
-        for(auto c : data)
-            if((min <= c) && (c < max))
-                freq++;
-        double den = sqrt(2.0 * M_PI) * sigma;
-        double gaussian = exp(Exponent(mean, sigma)) / den;
-        gauss = gaussian * delta * n_classes;
-    }
-    double Exponent(double mean, double sigma){
-        double bas = (centroid - mean) / sigma;
-        double exponent = (-0.5) * pow(bas, 2.0);
-        return exponent;
-    }
-};
+using namespace std;
 
 // dichiarazione della struttura per ciascun campione
 struct sample_struct {
     // variabili stabili della struttura
     string filepath;
     vector<double> data;
-    vector<class_struct> classes;
-
+    double position;
     // costruttore
     sample_struct(string filename){
-        filepath = "./data/" + filename;
+        filepath = "./data/"+filename;
     }
 
     // acquisizione dei dati
     void ReadFile(){
         ifstream input_file(filepath);
-        if (!input_file.is_open())
-            throw;
+        if (!input_file.is_open()){
+            cout<< "Error opening the file";
+            return;
+        }
         double value;
+        input_file >> position;
         while (input_file >> value)
             data.push_back(value);
         input_file.close();
@@ -84,7 +64,7 @@ struct sample_struct {
         int half = sort_data.size() / 2;
         if(sort_data.size()%2)
             return sort_data[half + 1];
-        return ((sort_data[half] + sort_data[half + 1]) / 2.0);
+        return (sort_data[half] + sort_data[half + 1]) / 2;
     }
 
     // sommatoria del quadrato degli scarti
@@ -115,6 +95,42 @@ struct sample_struct {
         double std_dev_mean = StdDevCorr()/sqrt(data.size());
         return std_dev_mean;
     }
+
+    // eliminazione dei dati secondo la regola del 3-sigma
+    vector<double> Refine(){
+        vector<double> new_data, removed_data;
+        double three_sigma = 3.0 * StdDevCorr();
+        double mean = Mean();
+        for (auto c : data){
+            if(c < mean - three_sigma || c > mean + three_sigma)
+                removed_data.push_back(c);
+            else new_data.push_back(c);
+        }
+        data = new_data;
+        return removed_data;
+    }
 };
 
+vector<string> GetFiles();
 
+int main(){
+    vector<string> filenames = GetFiles();
+    
+    return 0;
+}
+
+vector<string> GetFiles(){
+    vector<string> filenames;
+    struct dirent *entry;
+    DIR *dir = opendir("./data");
+
+    while ((entry = readdir(dir)) != NULL)
+        filenames.push_back(entry->d_name);
+    filenames.pop_back();
+    filenames.pop_back();
+    cout<< "Reading files:" <<endl;
+    for (auto c : filenames)
+        cout<< c <<endl;
+    closedir(dir);
+    return filenames;
+}
