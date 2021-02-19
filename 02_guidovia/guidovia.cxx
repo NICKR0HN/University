@@ -128,6 +128,7 @@ struct sample_struct {
 
 vector<string> GetFiles();
 vector<sample_struct> ElaborateData(vector<string>);
+void PrintEoF();
 
 
 int main(){
@@ -150,6 +151,7 @@ vector<string> GetFiles(){
     for (auto c : filenames)
         cout<< c <<endl;
     cout<<"Total: " <<filenames.size() <<endl;
+    PrintEoF();
     return filenames;
 }
 
@@ -160,4 +162,8 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
         sample.PrintData();
     }
     return data_out;
+}
+
+void PrintEoF(){
+    cout<<endl << string(100, '=') <<endl <<endl;
 }
