@@ -161,6 +161,7 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
         cout<< sample.filename <<endl <<endl;
         vector<double> removed_data;
         do {
+            cout<< setprecision(4);
             removed_data = sample.Refine();
             if (removed_data.size()){
                 cout<< "Removed data:" <<endl;
