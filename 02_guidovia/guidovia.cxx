@@ -73,7 +73,7 @@ struct sample_struct {
     double Summation(){
         double summation = 0.0;
         double m = Mean();
-        for(auto c : data)
+        for (auto c : data)
             summation += pow((c - m), 2.0);
         return summation;
     }
@@ -104,7 +104,7 @@ struct sample_struct {
         double three_sigma = 3.0 * StdDevCorr();
         double mean = Mean();
         for (auto c : data){
-            if(c < mean - three_sigma || c > mean + three_sigma)
+            if (c < mean - three_sigma || c > mean + three_sigma)
                 removed_data.push_back(c);
             else new_data.push_back(c);
         }
@@ -115,7 +115,6 @@ struct sample_struct {
     // stampa delle informazioni sul campione sulla console
     void PrintData(){
         cout<< setprecision(4);
-        cout<< filename <<endl <<endl;
         cout<< "Data set size: "    << data.size()  << "\t\tDistance: "             << distance     <<endl;
         cout<< "Minimum value: "    << Min()        << "\t\tMaximum value: "        << Max()        <<endl;
         cout<< "Mean value: "       << Mean()       << "\t\tMedian value: "         <<Median()      <<endl;
@@ -159,6 +158,18 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
     vector<sample_struct> data_out;
     for (auto c : filenames){
         sample_struct sample = sample_struct(c);
+        cout<< sample.filename <<endl <<endl;
+        vector<double> removed_data;
+        do {
+            removed_data = sample.Refine();
+            if (removed_data.size()){
+                cout<< "Removed data:" <<endl;
+                for (auto d : removed_data)
+                    cout<< d << '\t';
+                cout<< endl;
+            }
+            else cout<< "All data is compatible" <<endl <<endl;
+        } while (removed_data.size());
         sample.PrintData();
     }
     return data_out;
