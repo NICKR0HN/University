@@ -131,6 +131,7 @@ struct sample_struct {
     }
 };
 
+//struttura per immagazzinare i dati relativi alle velocità dei singoli segmenti
 struct speed_struct{
     double speed, time, s_sigma, t_sigma, min, max;
     string ranges;
@@ -166,6 +167,7 @@ int main(){
     return 0;
 }
 
+//ottiene i nomi di tutti i file presenti nella cartella "data"
 vector<string> GetFiles(){
     vector<string> filenames;
     struct dirent *entry;
@@ -184,6 +186,7 @@ vector<string> GetFiles(){
     return filenames;
 }
 
+//legge i file e salva i dati dentro le strutture
 vector<sample_struct> ElaborateData(vector<string> filenames){
     vector<sample_struct> samples;
     double dist0;
@@ -213,6 +216,7 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
     return samples;
 }
 
+//crea una struttura velocità per ciascun segmento
 vector<speed_struct> FindSpeed(vector<sample_struct> samples){
     vector<speed_struct> speeds;
     double d_sigma;
