@@ -15,7 +15,7 @@ struct sample_struct {
     // variabili stabili della struttura
     string filename, filepath;
     vector<double> data;
-    double distance;
+    double dist;
     // costruttore
     sample_struct(string name){
         filename = name;
@@ -31,7 +31,7 @@ struct sample_struct {
             return;
         }
         double value;
-        input_file >> distance;
+        input_file >> dist;
         while (input_file >> value)
             data.push_back(value);
         input_file.close();
@@ -115,13 +115,37 @@ struct sample_struct {
     // stampa delle informazioni sul campione sulla console
     void PrintData(){
         cout<< setprecision(4);
-        cout<< "Data set size: "    << data.size()  << "\t\tDistance: "             << distance     <<endl;
+        cout<< "Data set size: "    << data.size()  << "\t\tDistance: "             << dist         <<endl;
         cout<< "Minimum value: "    << Min()        << "\t\tMaximum value: "        << Max()        <<endl;
         cout<< "Mean value: "       << Mean()       << "\t\tMedian value: "         <<Median()      <<endl;
         cout<< "Std. deviation: "   << StdDev()     << "\tCorrected std. dev.: " << StdDevCorr() 
             << "\t\tMean std. dev.: "      << StdDevMean()   <<endl <<endl;
         cout<< string(100, '-') <<endl <<endl;
         cout<< setprecision(0);
+    }
+};
+
+// creo una struttura ridotta, con i soli dati necessari
+struct data_struct{
+    double dist, dist_sigma, time = 0.0, time_sigma = 0.0;
+    data_struct(double s_sigma, sample_struct data){
+        dist = data.dist;
+        dist_sigma = s_sigma;
+        time = data.Mean();
+        time_sigma = data.StdDevMean();
+    }
+    data_struct(double s, double s_sigma){
+        dist = s;
+        dist_sigma = s_sigma;
+    }
+};
+
+struct speed_struct{
+    double speed, time, sigma;
+    speed_struct(data_struct n1, data_struct n2){
+        speed = (n2.dist - n1.dist) / (n2.time - n1.time);
+        time = n2.time - n1.time;
+        // formula del sigma!!!
     }
 };
 
