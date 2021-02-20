@@ -115,11 +115,11 @@ struct sample_struct {
     // stampa delle informazioni sul campione sulla console
     void PrintData(){
         cout<< setprecision(4);
-        cout<< "Data set size: "    << data.size()  << "\t\tDistance: "             << dist         <<endl;
-        cout<< "Minimum value: "    << Min()        << "\t\tMaximum value: "        << Max()        <<endl;
-        cout<< "Mean value: "       << Mean()       << "\t\tMedian value: "         <<Median()      <<endl;
-        cout<< "Std. deviation: "   << StdDev()     << "\tCorrected std. dev.: " << StdDevCorr() 
-            << "\t\tMean std. dev.: "      << StdDevMean()   <<endl <<endl;
+        cout<< "Data set size: "    << data.size()  << "\t\tDistance: "             << dist         << 'm' <<endl;
+        cout<< "Minimum value: "    << Min()        << "s\t\tMaximum value: "       << Max()        << 's' <<endl;
+        cout<< "Mean value: "       << Mean()       << "s\t\tMedian value: "        << Median()     << 's' <<endl;
+        cout<< "Std. deviation: "   << StdDev()     << "s\tCorrected std. dev.: "   << StdDevCorr() 
+            << "s\t\tMean std. dev.: "      << StdDevMean()   << 's' <<endl <<endl;
         cout<< string(100, '-') <<endl <<endl;
         cout<< setprecision(0);
     }
@@ -150,13 +150,14 @@ struct speed_struct{
 };
 
 vector<string> GetFiles();
-vector<sample_struct> ElaborateData(vector<string>);
+vector<data_struct> ElaborateData(vector<string>);
+vector<data_struct> CopyData(vector<sample_struct>);
 void PrintEoF();
 
 
 int main(){
     vector<string> filenames = GetFiles();
-    vector<sample_struct> samples = ElaborateData(filenames);
+    vector<data_struct> samples = ElaborateData(filenames);
     return 0;
 }
 
@@ -178,8 +179,8 @@ vector<string> GetFiles(){
     return filenames;
 }
 
-vector<sample_struct> ElaborateData(vector<string> filenames){
-    vector<sample_struct> data_out;
+vector<data_struct> ElaborateData(vector<string> filenames){
+    vector<sample_struct> samples;
     for (auto c : filenames){
         sample_struct sample = sample_struct(c);
         cout<< sample.filename <<endl <<endl;
@@ -196,6 +197,24 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
             else cout<< "All data is compatible" <<endl <<endl;
         } while (removed_data.size());
         sample.PrintData();
+        samples.push_back(sample);
+    }
+    vector<data_struct> data_out = CopyData(samples);
+    return data_out;
+}
+
+vector<data_struct> CopyData(vector<sample_struct> samples){
+    vector<data_struct> data_out;
+    double dist0, s_sigma;
+    cout<< "Insert the first photogate position (in m): ";
+    cin>> dist0;
+    cout<< "Insert the standard deviation for the length measurements (in m): ";
+    cin>> s_sigma;
+    data_struct data0(dist0, s_sigma);
+    data_out.push_back(data0);
+    for (auto c : samples){
+        data_struct data(s_sigma, c);
+        data_out.push_back(data);
     }
     return data_out;
 }
