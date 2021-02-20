@@ -132,17 +132,29 @@ struct sample_struct {
 };
 
 struct speed_struct{
-    double speed, time, sigma;
-    speed_struct(sample_struct n1, sample_struct n2, double s_sigma){
+    double speed, time, s_sigma, t_sigma, min, max;
+    string ranges;
+    speed_struct(sample_struct n1, sample_struct n2, double d_sigma){
+        min = n1.dist;
+        max = n2.dist;
         speed = (n2.dist - n1.dist) / (n2.Mean() - n1.Mean());
         time = n2.Mean() - n1.Mean();
         // formula del sigma!!!
+    }
+    void PrintData(){
+        cout<< setprecision(4);
+        cout<< "Range:\t\t("        << min      << " - "        << max      << ") m"    <<endl;
+        cout<< "Average speed:\t"   << speed    << " m/s\t±"    << s_sigma  << " m/s"   <<endl;
+        cout<< "Time:\t\t"          << time     << " s\t±"      << t_sigma  << " s"     <<endl<<endl;
+        cout<< string(100, '-') <<endl <<endl;
+        cout<< setprecision(0);
     }
 };
 
 vector<string> GetFiles();
 vector<sample_struct> ElaborateData(vector<string>);
 vector<speed_struct> FindSpeed(vector<sample_struct>);
+void SpeedsOut(vector<speed_struct>);
 void PrintEoF();
 
 
@@ -150,6 +162,7 @@ int main(){
     vector<string> filenames = GetFiles();
     vector<sample_struct> samples = ElaborateData(filenames);
     vector<speed_struct> speeds = FindSpeed(samples);
+    SpeedsOut(speeds);
     return 0;
 }
 
@@ -184,10 +197,10 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
         cout<< sample.filename <<endl <<endl;
         vector<double> removed_data;
         do {
-            cout<< setprecision(4);
             removed_data = sample.Refine();
             if (removed_data.size()){
                 cout<< "Removed data:" <<endl;
+                cout<< setprecision(4);
                 for (auto d : removed_data)
                     cout<< d << '\t';
                 cout<< endl;
@@ -202,14 +215,20 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
 
 vector<speed_struct> FindSpeed(vector<sample_struct> samples){
     vector<speed_struct> speeds;
-    double s_sigma;
+    double d_sigma;
     cout<< "Insert the standard deviation for the distances (in m): ";
-    cin>> s_sigma;
+    cin>> d_sigma;
+    PrintEoF();
     for (int i = 1; i < samples.size(); i++){
-        speed_struct speed = speed_struct(samples[(i - 1)], samples[i], s_sigma);
+        speed_struct speed = speed_struct(samples[(i - 1)], samples[i], d_sigma);
         speeds.push_back(speed);
     }
     return speeds;
+}
+
+void SpeedsOut(vector<speed_struct> speeds){
+    for (auto c : speeds)
+        c.PrintData();
 }
 
 void PrintEoF(){
