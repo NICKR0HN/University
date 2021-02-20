@@ -22,6 +22,12 @@ struct sample_struct {
         filepath = "./data/"+name;
         ReadFile();
     }
+    // costruttore per il fototraguardo iniziale
+    sample_struct(double distance){
+        filename = "start";
+        data.push_back(0.0);
+        dist = distance;
+    }
 
     // acquisizione dei dati
     void ReadFile(){
@@ -125,39 +131,23 @@ struct sample_struct {
     }
 };
 
-// creo una struttura ridotta, con i soli dati necessari
-struct data_struct{
-    double dist, dist_sigma, time = 0.0, time_sigma = 0.0;
-    data_struct(double s_sigma, sample_struct data){
-        dist = data.dist;
-        dist_sigma = s_sigma;
-        time = data.Mean();
-        time_sigma = data.StdDevMean();
-    }
-    data_struct(double s, double s_sigma){
-        dist = s;
-        dist_sigma = s_sigma;
-    }
-};
-
 struct speed_struct{
     double speed, time, sigma;
-    speed_struct(data_struct n1, data_struct n2){
-        speed = (n2.dist - n1.dist) / (n2.time - n1.time);
-        time = n2.time - n1.time;
+    speed_struct(sample_struct n1, sample_struct n2){
+        speed = (n2.dist - n1.dist) / (n2.Mean() - n1.Mean());
+        time = n2.Mean() - n1.Mean();
         // formula del sigma!!!
     }
 };
 
 vector<string> GetFiles();
-vector<data_struct> ElaborateData(vector<string>);
-vector<data_struct> CopyData(vector<sample_struct>);
+vector<sample_struct> ElaborateData(vector<string>);
 void PrintEoF();
 
 
 int main(){
     vector<string> filenames = GetFiles();
-    vector<data_struct> samples = ElaborateData(filenames);
+    vector<sample_struct> samples = ElaborateData(filenames);
     return 0;
 }
 
@@ -179,8 +169,14 @@ vector<string> GetFiles(){
     return filenames;
 }
 
-vector<data_struct> ElaborateData(vector<string> filenames){
+vector<sample_struct> ElaborateData(vector<string> filenames){
     vector<sample_struct> samples;
+    double dist0;
+    cout<< "Insert the first photogate position (in m): ";
+    cin>> dist0;
+    sample_struct sample0 = sample_struct(dist0);
+    samples.push_back(sample0);
+    PrintEoF();
     for (auto c : filenames){
         sample_struct sample = sample_struct(c);
         cout<< sample.filename <<endl <<endl;
@@ -199,24 +195,7 @@ vector<data_struct> ElaborateData(vector<string> filenames){
         sample.PrintData();
         samples.push_back(sample);
     }
-    vector<data_struct> data_out = CopyData(samples);
-    return data_out;
-}
-
-vector<data_struct> CopyData(vector<sample_struct> samples){
-    vector<data_struct> data_out;
-    double dist0, s_sigma;
-    cout<< "Insert the first photogate position (in m): ";
-    cin>> dist0;
-    cout<< "Insert the standard deviation for the length measurements (in m): ";
-    cin>> s_sigma;
-    data_struct data0(dist0, s_sigma);
-    data_out.push_back(data0);
-    for (auto c : samples){
-        data_struct data(s_sigma, c);
-        data_out.push_back(data);
-    }
-    return data_out;
+    return samples;
 }
 
 void PrintEoF(){
