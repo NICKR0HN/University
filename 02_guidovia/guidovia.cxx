@@ -7,6 +7,7 @@
 #include <algorithm>    //sort()
 #include <dirent.h>     //get file names
 #include <sys/types.h>
+#include <limits>
 
 using namespace std;
 
@@ -152,7 +153,6 @@ vector<sample_struct> ElaborateData(vector<string>);
 vector<speed_struct> SpeedCalc(vector<sample_struct>);
 void SpeedPrint(vector<speed_struct>);
 void SpeedFileOut(vector<speed_struct>, string);
-void Stop();
 void PrintEoF();
 
 const string idir = "./data";
@@ -166,7 +166,6 @@ int main(){
         vector<speed_struct> speeds = SpeedCalc(samples);
         SpeedPrint(speeds);
         SpeedFileOut(speeds, c);
-        Stop();
     }
     return 0;
 }
@@ -257,12 +256,6 @@ void SpeedFileOut(vector<speed_struct> speeds, string foldername){
         ofile<< c.time << '\t' << c.t_sigma << '\t' << c.speed << '\t' << c.s_sigma <<endl;
     ofile.close();
     cout<< "File successfully created" <<endl;
-}
-
-void Stop(){
-    cout<< "Press Enter to continue";
-    cin.ignore();
-    cout<<endl;
 }
 
 void PrintEoF(){
