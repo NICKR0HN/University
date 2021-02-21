@@ -13,18 +13,17 @@ using namespace std;
 // dichiarazione della struttura per ciascun campione
 struct sample_struct {
     // variabili stabili della struttura
-    string filename, filepath;
+    string filepath;
     vector<double> data;
     double dist;
     // costruttore
-    sample_struct(string name){
-        filename = name;
-        filepath = "./data/"+name;
+    sample_struct(string path){
+        filepath = path;
         ReadFile();
     }
-    // costruttore per il fototraguardo iniziale
+    // costruttore per il fototraguardo iniziale (overload)
     sample_struct(double distance){
-        filename = "start";
+        filepath = "start";
         data.push_back(0.0);
         dist = distance;
     }
@@ -33,8 +32,8 @@ struct sample_struct {
     void ReadFile(){
         ifstream input_file(filepath);
         if (!input_file.is_open()){
-            cout<< "Error opening the file";
-            return;
+            cout<< "Error opening the file" <<endl;
+            exit(1);
         }
         double value;
         input_file >> dist;
@@ -120,14 +119,12 @@ struct sample_struct {
 
     // stampa delle informazioni sul campione sulla console
     void PrintData(){
-        cout<< setprecision(4);
         cout<< "Data set size: "    << data.size()  << "\t\tDistance: "             << dist         << 'm' <<endl;
         cout<< "Minimum value: "    << Min()        << "s\t\tMaximum value: "       << Max()        << 's' <<endl;
         cout<< "Mean value: "       << Mean()       << "s\t\tMedian value: "        << Median()     << 's' <<endl;
         cout<< "Std. deviation: "   << StdDev()     << "s\tCorrected std. dev.: "   << StdDevCorr() 
             << "s\t\tMean std. dev.: "      << StdDevMean()   << 's' <<endl <<endl;
         cout<< string(100, '-') <<endl <<endl;
-        cout<< setprecision(0);
     }
 };
 
@@ -143,32 +140,32 @@ struct speed_struct{
         // formula del sigma!!!
     }
     void PrintData(){
-        cout<< setprecision(4);
         cout<< "Range:\t\t("        << min      << " - "        << max      << ") m"    <<endl;
         cout<< "Average speed:\t"   << speed    << " m/s\t±"    << s_sigma  << " m/s"   <<endl;
         cout<< "Time:\t\t"          << time     << " s\t±"      << t_sigma  << " s"     <<endl<<endl;
         cout<< string(100, '-') <<endl <<endl;
-        cout<< setprecision(0);
     }
 };
 
 vector<string> GetFiles(string);
 vector<sample_struct> ElaborateData(vector<string>);
-vector<speed_struct> FindSpeed(vector<sample_struct>);
-void WriteSpeed(vector<speed_struct>);
-/* void FileOut(vector<speed_struct>); */
+vector<speed_struct> SpeedCalc(vector<sample_struct>);
+void SpeedPrint(vector<speed_struct>);
+void SpeedFileOut(vector<speed_struct>, string);
 void Stop();
 void PrintEoF();
 
+const string idir = "./data";
+const string odir = "./output";
 
 int main(){
-    vector<string> foldernames = GetFiles("./data");
+    vector<string> foldernames = GetFiles(idir);
     for (auto c : foldernames){
         vector<string> filenames = GetFiles(c);
         vector<sample_struct> samples = ElaborateData(filenames);
-        vector<speed_struct> speeds = FindSpeed(samples);
-        WriteSpeed(speeds);
-        
+        vector<speed_struct> speeds = SpeedCalc(samples);
+        SpeedPrint(speeds);
+        SpeedFileOut(speeds, c);
         Stop();
     }
     return 0;
@@ -208,16 +205,16 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
     PrintEoF();
     for (auto c : filenames){
         sample_struct sample = sample_struct(c);
-        cout<< sample.filename <<endl <<endl;
+        cout<< sample.filepath <<endl <<endl;
         vector<double> removed_data;
         do {
             removed_data = sample.Refine();
             if (removed_data.size()){
                 cout<< "Removed data:" <<endl;
-                cout<< setprecision(4);
+                cout<< setprecision(5);
                 for (auto d : removed_data)
                     cout<< d << '\t';
-                cout<< endl;
+                cout<< setprecision(-1) << defaultfloat << endl;
             }
             else cout<< "All data is compatible" <<endl <<endl;
         } while (removed_data.size());
@@ -228,7 +225,7 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
 }
 
 //crea una struttura velocità per ciascun segmento
-vector<speed_struct> FindSpeed(vector<sample_struct> samples){
+vector<speed_struct> SpeedCalc(vector<sample_struct> samples){
     vector<speed_struct> speeds;
     double d_sigma;
     cout<< "Insert the standard deviation for the distances (in m): ";
@@ -241,16 +238,26 @@ vector<speed_struct> FindSpeed(vector<sample_struct> samples){
     return speeds;
 }
 
-void WriteSpeed(vector<speed_struct> speeds){
+void SpeedPrint(vector<speed_struct> speeds){
     for (auto c : speeds)
         c.PrintData();
 }
 
-/* void FileOut(vector<speed_struct> speeds){
-
+void SpeedFileOut(vector<speed_struct> speeds, string foldername){
+    istringstream folderin(foldername);
+    string filename;
+    while (getline(folderin, filename, '/'));
+    string filepath = odir + "/" + filename + ".txt";
+    ofstream ofile(filepath);
+    if (!ofile.is_open()){
+        cout<< "Error: can't write the file" <<endl;
+        return;
+    }
     for (auto c : speeds)
-        c.WriteFile();
-} */
+        ofile<< c.time << '\t' << c.t_sigma << '\t' << c.speed << '\t' << c.s_sigma <<endl;
+    ofile.close();
+    cout<< "File successfully created" <<endl;
+}
 
 void Stop(){
     cout<< "Press Enter to continue";
