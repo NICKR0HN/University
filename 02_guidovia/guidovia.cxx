@@ -139,7 +139,7 @@ struct speed_struct{
         min = n1.dist;
         max = n2.dist;
         speed = (n2.dist - n1.dist) / (n2.Mean() - n1.Mean());
-        time = n2.Mean() - n1.Mean();
+        time = (n2.Mean() + n1.Mean()) / 2;
         // formula del sigma!!!
     }
     void PrintData(){
@@ -152,33 +152,44 @@ struct speed_struct{
     }
 };
 
-vector<string> GetFiles();
+vector<string> GetFiles(string);
 vector<sample_struct> ElaborateData(vector<string>);
 vector<speed_struct> FindSpeed(vector<sample_struct>);
-void SpeedsOut(vector<speed_struct>);
+void WriteSpeed(vector<speed_struct>);
+/* void FileOut(vector<speed_struct>); */
+void Stop();
 void PrintEoF();
 
 
 int main(){
-    vector<string> filenames = GetFiles();
-    vector<sample_struct> samples = ElaborateData(filenames);
-    vector<speed_struct> speeds = FindSpeed(samples);
-    SpeedsOut(speeds);
+    vector<string> foldernames = GetFiles("./data");
+    for (auto c : foldernames){
+        vector<string> filenames = GetFiles(c);
+        vector<sample_struct> samples = ElaborateData(filenames);
+        vector<speed_struct> speeds = FindSpeed(samples);
+        WriteSpeed(speeds);
+        
+        Stop();
+    }
     return 0;
 }
 
 //ottiene i nomi di tutti i file presenti nella cartella "data"
-vector<string> GetFiles(){
+vector<string> GetFiles(string wdir){
     vector<string> filenames;
+    const char *wdirname = wdir.c_str();
     struct dirent *entry;
-    DIR *dir = opendir("./data");
+    DIR *dir = opendir(wdirname);
 
-    while ((entry = readdir(dir)) != NULL)
-        filenames.push_back(entry->d_name);
+    while ((entry = readdir(dir)) != NULL){
+        string filename = wdir + "/" + entry->d_name;
+        filenames.push_back(filename);
+    }
     closedir(dir);
     filenames.pop_back();
     filenames.pop_back();
-    cout<< "Reading files:" <<endl;
+    sort(filenames.begin(), filenames.end());
+    cout<< "Reading directory:" <<endl;
     for (auto c : filenames)
         cout<< c <<endl;
     cout<<"Total files found: " <<filenames.size() <<endl;
@@ -230,9 +241,21 @@ vector<speed_struct> FindSpeed(vector<sample_struct> samples){
     return speeds;
 }
 
-void SpeedsOut(vector<speed_struct> speeds){
+void WriteSpeed(vector<speed_struct> speeds){
     for (auto c : speeds)
         c.PrintData();
+}
+
+/* void FileOut(vector<speed_struct> speeds){
+
+    for (auto c : speeds)
+        c.WriteFile();
+} */
+
+void Stop(){
+    cout<< "Press Enter to continue";
+    cin.ignore();
+    cout<<endl;
 }
 
 void PrintEoF(){
