@@ -120,6 +120,7 @@ struct sample_struct {
 
     // stampa delle informazioni sul campione sulla console
     void PrintData(){
+        cout<< setprecision(5);
         cout<< "Data set size: "    << data.size()  << "\t\tDistance: "             << dist         << 'm' <<endl;
         cout<< "Minimum value: "    << Min()        << "s\t\tMaximum value: "       << Max()        << 's' <<endl;
         cout<< "Mean value: "       << Mean()       << "s\t\tMedian value: "        << Median()     << 's' <<endl;
@@ -256,6 +257,7 @@ void SpeedFileOut(vector<speed_struct> speeds, string foldername){
         ofile<< c.time << '\t' << c.t_sigma << '\t' << c.speed << '\t' << c.s_sigma <<endl;
     ofile.close();
     cout<< "File successfully created" <<endl;
+    PrintEoF();
 }
 
 void PrintEoF(){
