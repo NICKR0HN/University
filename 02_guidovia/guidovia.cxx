@@ -72,7 +72,7 @@ struct sample_struct {
         int half = sort_data.size() / 2;
         if(sort_data.size()%2)
             return sort_data[half + 1];
-        return (sort_data[half] + sort_data[half + 1]) / 2;
+        return (sort_data[half] + sort_data[half + 1]) / 2.0;
     }
 
     // sommatoria del quadrato degli scarti
@@ -132,19 +132,23 @@ struct sample_struct {
 
 //struttura per immagazzinare i dati relativi alle velocità dei singoli segmenti
 struct speed_struct{
-    double speed, time, s_sigma, t_sigma, min, max;
+    double speed, time, s_sigma, dt_sigma, min, max;
     string ranges;
     speed_struct(sample_struct n1, sample_struct n2, double d_sigma){
         min = n1.dist;
         max = n2.dist;
-        speed = (n2.dist - n1.dist) / (n2.Mean() - n1.Mean());
-        time = (n2.Mean() + n1.Mean()) / 2;
-        // formula del sigma!!!
+        double ds = (n2.dist - n1.dist);
+        double dt = (n2.Mean() - n1.Mean());
+        speed = ds / dt;
+        time = (n2.Mean() + n1.Mean()) / 2.0;
+        double ds_sigma = sqrt(pow(d_sigma, 2.0) + pow(d_sigma, 2.0));
+        dt_sigma = sqrt(pow(n2.StdDevMean(), 2.0) + pow(n1.StdDevMean(), 2.0));
+        s_sigma = abs(ds / dt) * sqrt(pow((ds_sigma / ds), 2.0) + pow((dt_sigma / dt), 2.0));
     }
     void PrintData(){
         cout<< "Range:\t\t("        << min      << " - "        << max      << ") m"    <<endl;
         cout<< "Average speed:\t"   << speed    << " m/s\t±"    << s_sigma  << " m/s"   <<endl;
-        cout<< "Time:\t\t"          << time     << " s\t±"      << t_sigma  << " s"     <<endl<<endl;
+        cout<< "Time:\t\t"          << time     << " s\t±"      << dt_sigma << " s"     <<endl<<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
@@ -254,7 +258,7 @@ void SpeedFileOut(vector<speed_struct> speeds, string foldername){
         return;
     }
     for (auto c : speeds)
-        ofile<< c.time << '\t' << c.t_sigma << '\t' << c.speed << '\t' << c.s_sigma <<endl;
+        ofile<< c.time << '\t' << c.dt_sigma << '\t' << c.speed << '\t' << c.s_sigma <<endl;
     ofile.close();
     cout<< "File successfully created" <<endl;
     PrintEoF();
