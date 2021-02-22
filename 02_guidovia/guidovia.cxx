@@ -261,7 +261,7 @@ void SpeedFileOut(vector<speed_struct> speeds, string foldername){
         return;
     }
     for (auto c : speeds)
-        ofile<< c.time << '\t' << c.dt_sigma << '\t' << c.speed << '\t' << c.sp_sigma <<endl;
+        ofile<< c.time << '\t' << c.tm_sigma << '\t' << c.speed << '\t' << c.sp_sigma <<endl;
     ofile.close();
     cout<< "File successfully created" <<endl;
     PrintEoF();
