@@ -132,23 +132,26 @@ struct sample_struct {
 
 //struttura per immagazzinare i dati relativi alle velocità dei singoli segmenti
 struct speed_struct{
-    double speed, time, sp_sigma, dt_sigma, min, max;
+    double speed, sp_sigma, time, tm_sigma, ds, ds_sigma, dt, dt_sigma, min, max;
     string ranges;
     speed_struct(sample_struct n1, sample_struct n2, double d_sigma){
         min = n1.dist;
         max = n2.dist;
-        double ds = (n2.dist - n1.dist);
-        double dt = (n2.Mean() - n1.Mean());
-        speed = ds / dt;
-        time = (n2.Mean() + n1.Mean()) / 2.0;
-        double ds_sigma = sqrt(pow(d_sigma, 2.0) + pow(d_sigma, 2.0));
+        ds = (n2.dist - n1.dist);
+        ds_sigma = sqrt(pow(d_sigma, 2.0) + pow(d_sigma, 2.0));
+        dt = (n2.Mean() - n1.Mean());
         dt_sigma = sqrt(pow(n2.StdDevMean(), 2.0) + pow(n1.StdDevMean(), 2.0));
-        sp_sigma = abs(ds / dt) * sqrt(pow((ds_sigma / ds), 2.0) + pow((dt_sigma / dt), 2.0));
+        time = (n2.Mean() + n1.Mean()) / 2.0;
+        tm_sigma = 0.5 * dt_sigma;
+        speed = ds / dt;
+        sp_sigma = abs(speed) * sqrt(pow((ds_sigma / ds), 2.0) + pow((dt_sigma / dt), 2.0));
     }
     void PrintData(){
         cout<< "Range:\t\t("        << min      << " - "        << max      << ") m"    <<endl;
+        cout<< "Distance:\t"        << ds       << " m\t±"      << ds_sigma << " m"     <<endl;
+        cout<< "Time:\t\t"          << dt       << " s\t±"      << dt_sigma << " s"     <<endl;
         cout<< "Average speed:\t"   << speed    << " m/s\t±"    << sp_sigma << " m/s"   <<endl;
-        cout<< "Time:\t\t"          << time     << " s\t±"      << dt_sigma << " s"     <<endl<<endl;
+        cout<< "Int. time:\t"       << time     << " s\t±"      << dt_sigma << " s"     <<endl<<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
