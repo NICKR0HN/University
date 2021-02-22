@@ -25,7 +25,7 @@ struct sample_struct {
     // costruttore per il fototraguardo iniziale (overload)
     sample_struct(double distance){
         filepath = "start";
-        data.push_back(0.0);
+        data = {0.0, 0.0};
         dist = distance;
     }
 
