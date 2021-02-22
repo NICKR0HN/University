@@ -125,7 +125,7 @@ struct sample_struct {
         cout<< "Minimum value: "    << Min()        << "s\t\tMaximum value: "       << Max()        << 's' <<endl;
         cout<< "Mean value: "       << Mean()       << "s\t\tMedian value: "        << Median()     << 's' <<endl;
         cout<< "Std. deviation: "   << StdDev()     << "s\tCorrected std. dev.: "   << StdDevCorr() 
-            << "s\t\tMean std. dev.: "      << StdDevMean()   << 's' <<endl <<endl;
+            << "s\t\tMean std. dev.: " << StdDevMean() << 's' <<endl <<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
@@ -151,7 +151,36 @@ struct speed_struct{
         cout<< "Distance:\t"        << ds       << " m\t\t±"    << ds_sigma << " m"     <<endl;
         cout<< "Time:\t\t"          << dt       << " s\t±"      << dt_sigma << " s"     <<endl;
         cout<< "Average speed:\t"   << speed    << " m/s\t±"    << sp_sigma << " m/s"   <<endl;
-        cout<< "Int. time:\t"       << time     << " s\t±"      << dt_sigma << " s"     <<endl<<endl;
+        cout<< "Int. time:\t"       << time     << " s\t±"      << tm_sigma << " s"     <<endl <<endl;
+        cout<< string(100, '-') <<endl <<endl;
+    }
+};
+
+struct interpol_struct{
+    string dirname;
+    double acc = 0.0, acc_sigma, q = 0.0, q_sigma;
+    interpol_struct(vector<speed_struct> speeds, string foldername){
+        dirname = foldername;
+        double h = 0.0, k = 0.0, n = speeds.size();
+        for (auto c : speeds){
+            h += pow(c.time, 2.0);
+            k += c.time;
+        }
+        double delta = n * h + k;
+        for (auto c : speeds){
+            acc += (n * c.time - k) * c.speed / delta;
+        }
+        // formula acc_sigma
+        for (auto c : speeds){
+            q += (h - (k * c.time)) * c.speed / delta;
+        }
+        // formula q_sigma
+    }
+    void PrintData(){
+        cout<< "Dataset: "  << dirname  <<endl;
+        cout<< "y = ax + b"             <<endl;
+        cout<< "a = " << acc    << " m/s²\t±"   << acc_sigma    << " m/s²"  <<endl;
+        cout<< "b = " << q      << " m/s\t±"    << q_sigma      << " m/s"   <<endl <<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
@@ -169,12 +198,18 @@ const string odir = "./output";
 
 int main(){
     vector<string> foldernames = GetFiles(idir);
+    vector<interpol_struct> lines;
     for (auto c : foldernames){
         vector<string> filenames = GetFiles(c);
         vector<sample_struct> samples = ElaborateData(filenames);
         vector<speed_struct> speeds = SpeedCalc(samples);
-        SpeedPrint(speeds);
+        // SpeedPrint(speeds);
         SpeedFileOut(speeds, c);
+        interpol_struct line = interpol_struct(speeds, c);
+        lines.push_back(line);
+    }
+    for (auto c : lines){
+        c.PrintData();
     }
     return 0;
 }
@@ -217,9 +252,9 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
         vector<double> removed_data;
         do {
             removed_data = sample.Refine();
-            RemDataPrint(removed_data);
+            // RemDataPrint(removed_data);
         } while (removed_data.size());
-        sample.PrintData();
+        // sample.PrintData();
         samples.push_back(sample);
     }
     return samples;
