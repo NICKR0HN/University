@@ -148,7 +148,7 @@ struct speed_struct{
     }
     void PrintData(){
         cout<< "Range:\t\t("        << min      << " - "        << max      << ") m"    <<endl;
-        cout<< "Distance:\t"        << ds       << " m\t±"      << ds_sigma << " m"     <<endl;
+        cout<< "Distance:\t"        << ds       << " m\t\t±"    << ds_sigma << " m"     <<endl;
         cout<< "Time:\t\t"          << dt       << " s\t±"      << dt_sigma << " s"     <<endl;
         cout<< "Average speed:\t"   << speed    << " m/s\t±"    << sp_sigma << " m/s"   <<endl;
         cout<< "Int. time:\t"       << time     << " s\t±"      << dt_sigma << " s"     <<endl<<endl;
@@ -159,6 +159,7 @@ struct speed_struct{
 vector<string> GetFiles(string);
 vector<sample_struct> ElaborateData(vector<string>);
 vector<speed_struct> SpeedCalc(vector<sample_struct>);
+void RemDataPrint(vector<double>);
 void SpeedPrint(vector<speed_struct>);
 void SpeedFileOut(vector<speed_struct>, string);
 void PrintEoF();
@@ -193,7 +194,7 @@ vector<string> GetFiles(string wdir){
     filenames.pop_back();
     filenames.pop_back();
     sort(filenames.begin(), filenames.end());
-    cout<< "Reading directory:" <<endl;
+    cout<< "Reading directory: " << wdir << '/' <<endl;
     for (auto c : filenames)
         cout<< c <<endl;
     cout<<"Total files found: " <<filenames.size() <<endl;
@@ -216,19 +217,23 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
         vector<double> removed_data;
         do {
             removed_data = sample.Refine();
-            if (removed_data.size()){
-                cout<< "Removed data:" <<endl;
-                cout<< setprecision(5);
-                for (auto d : removed_data)
-                    cout<< d << '\t';
-                cout<< setprecision(-1) << defaultfloat << endl;
-            }
-            else cout<< "All data is compatible" <<endl <<endl;
+            RemDataPrint(removed_data);
         } while (removed_data.size());
         sample.PrintData();
         samples.push_back(sample);
     }
     return samples;
+}
+
+void RemDataPrint(vector<double> removed_data){
+    if (removed_data.size()){
+        cout<< "Removed data:" <<endl;
+        cout<< setprecision(5);
+        for (auto d : removed_data)
+            cout<< d << '\t';
+        cout<< endl;
+    }
+    else cout<< "All data is compatible" <<endl <<endl;
 }
 
 //crea una struttura velocità per ciascun segmento
