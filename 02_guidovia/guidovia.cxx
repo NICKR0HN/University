@@ -151,7 +151,8 @@ struct speed_struct{
         cout<< "Distance:\t"        << ds       << " m\t\t±"    << ds_sigma << " m"     <<endl;
         cout<< "Time:\t\t"          << dt       << " s\t±"      << dt_sigma << " s"     <<endl;
         cout<< "Average speed:\t"   << speed    << " m/s\t±"    << sp_sigma << " m/s"   <<endl;
-        cout<< "Int. time:\t"       << time     << " s\t±"      << tm_sigma << " s"     <<endl <<endl;
+        cout<< "Int. time:\t"       << time     << " s\t±"      << tm_sigma << " s"     <<endl;
+        cout<< (tm_sigma / time)    << '\t'     << (sp_sigma / speed)       <<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
@@ -203,7 +204,7 @@ int main(){
         vector<string> filenames = GetFiles(c);
         vector<sample_struct> samples = ElaborateData(filenames);
         vector<speed_struct> speeds = SpeedCalc(samples);
-        // SpeedPrint(speeds);
+        SpeedPrint(speeds);
         SpeedFileOut(speeds, c);
         interpol_struct line = interpol_struct(speeds, c);
         lines.push_back(line);
