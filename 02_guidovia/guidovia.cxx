@@ -159,9 +159,15 @@ struct speed_struct{
 
 struct interpol_struct{
     string dirname;
-    double acc = 0.0, acc_sigma = 0.0, q = 0.0, q_sigma = 0.0, g, g_sigma;
+    double acc, acc_sigma, q, q_sigma, g, g_sigma;
     interpol_struct(vector<speed_struct> speeds, string foldername, double sin_a, double a_sigma){
         dirname = foldername;
+        AccQ(speeds);
+        Sigmas(speeds);
+        g = acc / sin_a;
+        GSigma(sin_a, a_sigma);
+    }
+    void AccQ(vector<speed_struct> speeds){
         double h = 0.0, k = 0.0, s = 0.0, n = speeds.size();
         for (auto c : speeds){
             h += pow(c.time, 2.0);
@@ -169,23 +175,30 @@ struct interpol_struct{
             s += pow(c.sp_sigma, 2.0);
         }
         double delta = n * h - pow(k, 2.0);
-
+        double acc_temp = 0.0, q_temp = 0.0;
         for (auto c : speeds){
-            acc += (n * c.time - k) * c.speed / delta;
-            acc_sigma += pow((1.0 / c.sp_sigma), 2.0);
-            q += (h - (k * c.time)) * c.speed / delta;
-            q_sigma += pow((c.time / c.sp_sigma), 2.0);
+            acc_temp += (n * c.time - k) * c.speed / delta;
+            q_temp += (h - (k * c.time)) * c.speed / delta;
         }
-        acc_sigma = sqrt(acc_sigma / delta);
-        q_sigma = sqrt(q_sigma  / delta);
-        g = acc / sin_a;
-        g_sigma = GSigma(sin_a, a_sigma);
+        acc = acc_temp;
+        q = q_temp;
     }
-    double GSigma(double sin_a, double a_sigma){
+    void Sigmas(vector<speed_struct> speeds){
+        double h = 0.0, k = 0.0, p = 0.0;
+        for (auto c : speeds){
+            double den = 1.0 / pow(c.sp_sigma, 2.0);
+            h += 1.0 * den;
+            k += pow(c.time, 2.0) * den;
+            p += c.time * den;
+        }
+        double delta = (h * k) - pow(p, 2.0);
+        acc_sigma = sqrt(h / delta);
+        q_sigma = sqrt(k / delta);
+    }
+    void GSigma(double sin_a, double a_sigma){
         double a = pow((acc_sigma / sin_a), 2.0);
         double b = (1.0 - pow(sin_a, 2.0)) * pow((acc * a_sigma / sin_a), 2.0);
-        double g_sigma = sqrt(a + b);
-        return g_sigma;
+        g_sigma = sqrt(a + b);
     }
     void PrintData(){
         cout<< setprecision(4);
@@ -216,7 +229,7 @@ int main(){
     cout<< "Insert the sine of the angle of inclination: ";
     cin >> sin_a;       // 0.01308959557
     cout<< "Insert the standard deviation for the angle (in rad): ";
-    cin >> a_sigma;     // 2.908882087e-5
+    cin >> a_sigma;     // 0.00002908882087
     vector<string> foldernames = GetFiles(idir);
     vector<interpol_struct> lines;
     for (auto c : foldernames){
