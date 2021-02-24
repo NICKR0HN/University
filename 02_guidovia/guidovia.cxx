@@ -159,36 +159,40 @@ struct speed_struct{
 
 struct interpol_struct{
     string dirname;
-    double acc = 0.0, acc_sigma, q = 0.0, q_sigma;
+    double acc = 0.0, acc_sigma, q = 0.0, q_sigma, g, g_sigma;
     interpol_struct(vector<speed_struct> speeds, string foldername){
         dirname = foldername;
-        double h = 0.0, k = 0.0, n = speeds.size();
+        double h = 0.0, k = 0.0, s = 0.0, n = speeds.size();
         for (auto c : speeds){
             h += pow(c.time, 2.0);
             k += c.time;
+            s += pow(c.sp_sigma, 2.0);
         }
-        double delta = n * h + k;
+        double delta = n * h - pow(k, 2.0);
         for (auto c : speeds){
             acc += (n * c.time - k) * c.speed / delta;
         }
-        // formula acc_sigma
+        
         for (auto c : speeds){
             q += (h - (k * c.time)) * c.speed / delta;
         }
         // formula q_sigma
+        g = acc * 76.39655439;
     }
     void PrintData(){
+        cout<< setprecision(4);
         cout<< "Dataset: "  << dirname  <<endl;
         cout<< "y = ax + b"             <<endl;
         cout<< "a = " << acc    << " m/s²\t±"   << acc_sigma    << " m/s²"  <<endl;
-        cout<< "b = " << q      << " m/s\t±"    << q_sigma      << " m/s"   <<endl <<endl;
+        cout<< "b = " << q      << " m/s\t±"    << q_sigma      << " m/s"   <<endl;
+        cout<< "g = " << g      << " m/s²\t±"   << g_sigma      << " m/s²"  <<endl<<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
 
 vector<string> GetFiles(string);
 vector<sample_struct> ElaborateData(vector<string>);
-vector<speed_struct> SpeedCalc(vector<sample_struct>);
+vector<speed_struct> SpeedCalc(vector<sample_struct>, double);
 void RemDataPrint(vector<double>);
 void SpeedPrint(vector<speed_struct>);
 void SpeedFileOut(vector<speed_struct>, string);
@@ -198,13 +202,16 @@ const string idir = "./data";
 const string odir = "./output";
 
 int main(){
+    double d_sigma;
+    cout<< "Insert the standard deviation for the distances (in m): ";
+    cin>> d_sigma;
     vector<string> foldernames = GetFiles(idir);
     vector<interpol_struct> lines;
     for (auto c : foldernames){
         vector<string> filenames = GetFiles(c);
         vector<sample_struct> samples = ElaborateData(filenames);
-        vector<speed_struct> speeds = SpeedCalc(samples);
-        SpeedPrint(speeds);
+        vector<speed_struct> speeds = SpeedCalc(samples, d_sigma);
+        // SpeedPrint(speeds);
         SpeedFileOut(speeds, c);
         interpol_struct line = interpol_struct(speeds, c);
         lines.push_back(line);
@@ -273,11 +280,8 @@ void RemDataPrint(vector<double> removed_data){
 }
 
 //crea una struttura velocità per ciascun segmento
-vector<speed_struct> SpeedCalc(vector<sample_struct> samples){
+vector<speed_struct> SpeedCalc(vector<sample_struct> samples, double d_sigma){
     vector<speed_struct> speeds;
-    double d_sigma;
-    cout<< "Insert the standard deviation for the distances (in m): ";
-    cin>> d_sigma;
     PrintEoF();
     for (int i = 1; i < samples.size(); i++){
         speed_struct speed = speed_struct(samples[(i - 1)], samples[i], d_sigma);
