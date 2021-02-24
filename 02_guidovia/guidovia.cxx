@@ -159,8 +159,8 @@ struct speed_struct{
 
 struct interpol_struct{
     string dirname;
-    double acc = 0.0, acc_sigma, q = 0.0, q_sigma, g, g_sigma;
-    interpol_struct(vector<speed_struct> speeds, string foldername){
+    double acc = 0.0, acc_sigma = 0.0, q = 0.0, q_sigma = 0.0, g, g_sigma;
+    interpol_struct(vector<speed_struct> speeds, string foldername, double sin_a, double a_sigma){
         dirname = foldername;
         double h = 0.0, k = 0.0, s = 0.0, n = speeds.size();
         for (auto c : speeds){
@@ -169,15 +169,23 @@ struct interpol_struct{
             s += pow(c.sp_sigma, 2.0);
         }
         double delta = n * h - pow(k, 2.0);
+
         for (auto c : speeds){
             acc += (n * c.time - k) * c.speed / delta;
-        }
-        
-        for (auto c : speeds){
+            acc_sigma += pow((1.0 / c.sp_sigma), 2.0);
             q += (h - (k * c.time)) * c.speed / delta;
+            q_sigma += pow((c.time / c.sp_sigma), 2.0);
         }
-        // formula q_sigma
-        g = acc * 76.39655439;
+        acc_sigma = sqrt(acc_sigma / delta);
+        q_sigma = sqrt(q_sigma  / delta);
+        g = acc / sin_a;
+        g_sigma = GSigma(sin_a, a_sigma);
+    }
+    double GSigma(double sin_a, double a_sigma){
+        double a = pow((acc_sigma / sin_a), 2.0);
+        double b = (1.0 - pow(sin_a, 2.0)) * pow((acc * a_sigma / sin_a), 2.0);
+        double g_sigma = sqrt(a + b);
+        return g_sigma;
     }
     void PrintData(){
         cout<< setprecision(4);
@@ -202,9 +210,13 @@ const string idir = "./data";
 const string odir = "./output";
 
 int main(){
-    double d_sigma;
+    double d_sigma, sin_a, a_sigma;
     cout<< "Insert the standard deviation for the distances (in m): ";
-    cin>> d_sigma;
+    cin >> d_sigma;     // 0.0002
+    cout<< "Insert the sine of the angle of inclination: ";
+    cin >> sin_a;       // 0.01308959557
+    cout<< "Insert the standard deviation for the angle (in rad): ";
+    cin >> a_sigma;     // 2.908882087e-5
     vector<string> foldernames = GetFiles(idir);
     vector<interpol_struct> lines;
     for (auto c : foldernames){
@@ -213,7 +225,7 @@ int main(){
         vector<speed_struct> speeds = SpeedCalc(samples, d_sigma);
         // SpeedPrint(speeds);
         SpeedFileOut(speeds, c);
-        interpol_struct line = interpol_struct(speeds, c);
+        interpol_struct line = interpol_struct(speeds, c, sin_a, a_sigma);
         lines.push_back(line);
     }
     for (auto c : lines){
