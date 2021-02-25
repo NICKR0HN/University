@@ -159,46 +159,41 @@ struct speed_struct{
 
 struct interpol_struct{
     string dirname;
-    double acc, acc_sigma, q, q_sigma, g, g_sigma;
+    double acc, acc_sigma, q, q_sigma, g, g_sigma, sp_sigma_post;
     interpol_struct(vector<speed_struct> speeds, string foldername, double sin_a, double a_sigma){
         dirname = foldername;
         AccQ(speeds);
-        Sigmas(speeds);
         g = acc / sin_a;
         GSigma(sin_a, a_sigma);
+        SpSigmaPost(speeds);
     }
     void AccQ(vector<speed_struct> speeds){
-        double h = 0.0, k = 0.0, s = 0.0, n = speeds.size();
-        for (auto c : speeds){
-            h += pow(c.time, 2.0);
-            k += c.time;
-            s += pow(c.sp_sigma, 2.0);
-        }
-        double delta = n * h - pow(k, 2.0);
-        double acc_temp = 0.0, q_temp = 0.0;
-        for (auto c : speeds){
-            acc_temp += (n * c.time - k) * c.speed / delta;
-            q_temp += (h - (k * c.time)) * c.speed / delta;
-        }
-        acc = acc_temp;
-        q = q_temp;
-    }
-    void Sigmas(vector<speed_struct> speeds){
-        double h = 0.0, k = 0.0, p = 0.0;
+        double one = 0.0, xone = 0.0, xtwo = 0.0, yone = 0.0, xy = 0.0;
         for (auto c : speeds){
             double den = 1.0 / pow(c.sp_sigma, 2.0);
-            h += 1.0 * den;
-            k += pow(c.time, 2.0) * den;
-            p += c.time * den;
+            one += den;
+            xone += c.time * den;
+            xtwo += c.time * c.time * den;
+            yone += c.speed * den;
+            xy += c.time * c.speed * den;
         }
-        double delta = (h * k) - pow(p, 2.0);
-        acc_sigma = sqrt(h / delta);
-        q_sigma = sqrt(k / delta);
+        double delta = (one * xtwo) - pow(xone, 2.0);
+        acc = ((one * xy) - (xone * yone)) / delta;
+        q =  ((xtwo * yone) - (xone * xy)) / delta;
+        acc_sigma = sqrt(one / delta);
+        q_sigma = sqrt(xtwo / delta);
     }
     void GSigma(double sin_a, double a_sigma){
         double a = pow((acc_sigma / sin_a), 2.0);
         double b = (1.0 - pow(sin_a, 2.0)) * pow((acc * a_sigma / sin_a), 2.0);
         g_sigma = sqrt(a + b);
+    }
+    void SpSigmaPost(vector<speed_struct> speeds){
+        double num = 0.0;
+        for (auto c : speeds)
+            num += pow ((c.speed - acc * c.time - q), 2.0);
+        double den = speeds.size() - 2.0;
+        sp_sigma_post = sqrt(num / den);
     }
     void PrintData(){
         cout<< setprecision(4);
@@ -206,7 +201,8 @@ struct interpol_struct{
         cout<< "y = ax + b"             <<endl;
         cout<< "a = " << acc    << " m/s²\t±"   << acc_sigma    << " m/s²"  <<endl;
         cout<< "b = " << q      << " m/s\t±"    << q_sigma      << " m/s"   <<endl;
-        cout<< "g = " << g      << " m/s²\t±"   << g_sigma      << " m/s²"  <<endl<<endl;
+        cout<< "g = " << g      << " m/s²\t±"   << g_sigma      << " m/s²"  <<endl;
+        cout<< "Post. speed sigma = "           <<sp_sigma_post << " m/s"   <<endl<<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
