@@ -159,11 +159,11 @@ struct speed_struct{
 
 struct interpol_struct{
     string dirname;
-    double acc, acc_sigma, q, q_sigma, g, g_sigma, sp_sigma_post;
+    double acc, acc_sigma, sp0, sp0_sigma, grav, grav_sigma, sp_sigma_post, chi;
     interpol_struct(vector<speed_struct> speeds, string foldername, double sin_a, double a_sigma){
         dirname = foldername;
         AccQ(speeds);
-        g = acc / sin_a;
+        grav = acc / sin_a;
         GSigma(sin_a, a_sigma);
         SpSigmaPost(speeds);
     }
@@ -179,19 +179,19 @@ struct interpol_struct{
         }
         double delta = (one * xtwo) - pow(xone, 2.0);
         acc = ((one * xy) - (xone * yone)) / delta;
-        q =  ((xtwo * yone) - (xone * xy)) / delta;
+        sp0 =  ((xtwo * yone) - (xone * xy)) / delta;
         acc_sigma = sqrt(one / delta);
-        q_sigma = sqrt(xtwo / delta);
+        sp0_sigma = sqrt(xtwo / delta);
     }
     void GSigma(double sin_a, double a_sigma){
         double a = pow((acc_sigma / sin_a), 2.0);
         double b = (1.0 - pow(sin_a, 2.0)) * pow((acc * a_sigma / sin_a), 2.0);
-        g_sigma = sqrt(a + b);
+        grav_sigma = sqrt(a + b);
     }
     void SpSigmaPost(vector<speed_struct> speeds){
         double num = 0.0;
         for (auto c : speeds)
-            num += pow ((c.speed - acc * c.time - q), 2.0);
+            num += pow ((c.speed - acc * c.time - sp0), 2.0);
         double den = speeds.size() - 2.0;
         sp_sigma_post = sqrt(num / den);
     }
@@ -200,9 +200,9 @@ struct interpol_struct{
         cout<< "Dataset: "  << dirname  <<endl;
         cout<< "y = ax + b"             <<endl;
         cout<< "a = " << acc    << " m/s²\t±"   << acc_sigma    << " m/s²"  <<endl;
-        cout<< "b = " << q      << " m/s\t±"    << q_sigma      << " m/s"   <<endl;
-        cout<< "g = " << g      << " m/s²\t±"   << g_sigma      << " m/s²"  <<endl;
-        cout<< "Post. speed sigma = "           <<sp_sigma_post << " m/s"   <<endl<<endl;
+        cout<< "b = " << sp0    << " m/s\t±"    << sp0_sigma    << " m/s"   <<endl;
+        cout<< "g = " << grav   << " m/s²\t±"   << grav_sigma   << " m/s²"  <<endl;
+        cout<< "Post. speed sigma = "           << sp_sigma_post<< " m/s"   <<endl<<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
