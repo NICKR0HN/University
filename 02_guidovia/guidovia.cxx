@@ -166,6 +166,8 @@ struct interpol_struct{
         grav = acc / sin_a;
         GSigma(sin_a, a_sigma);
         SpSigmaPost(speeds);
+        double grav_real = 9.806;
+        chi = pow((grav - grav_real) / grav_sigma, 2.0);
     }
     void AccQ(vector<speed_struct> speeds){
         double one = 0.0, xone = 0.0, xtwo = 0.0, yone = 0.0, xy = 0.0;
@@ -202,7 +204,8 @@ struct interpol_struct{
         cout<< "a = " << acc    << " m/s²\t±"   << acc_sigma    << " m/s²"  <<endl;
         cout<< "b = " << sp0    << " m/s\t±"    << sp0_sigma    << " m/s"   <<endl;
         cout<< "g = " << grav   << " m/s²\t±"   << grav_sigma   << " m/s²"  <<endl;
-        cout<< "Post. speed sigma = "           << sp_sigma_post<< " m/s"   <<endl<<endl;
+        cout<< "Post. speed sigma = "           << sp_sigma_post<< " m/s"   <<endl;
+        cout<< "Chi square = "                  << chi          <<endl<<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
