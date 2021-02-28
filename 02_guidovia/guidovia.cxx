@@ -258,9 +258,11 @@ vector<string> GetFiles(string wdir){
         filenames.push_back(filename);
     }
     closedir(dir);
-    filenames.pop_back();
-    filenames.pop_back();
     sort(filenames.begin(), filenames.end());
+    reverse(filenames.begin(), filenames.end());
+    filenames.pop_back();
+    filenames.pop_back();
+    reverse(filenames.begin(), filenames.end());
     cout<< "Reading directory: " << wdir << '/' <<endl;
     for (auto c : filenames)
         cout<< c <<endl;
