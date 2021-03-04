@@ -11,6 +11,10 @@
 
 using namespace std;
 
+double M_Mean(vector<double>);
+double M_Summation(vector<double>);
+double M_GetStdDev(vector<double>, int);
+
 // dichiarazione della struttura per ciascun campione
 struct sample_struct {
     // variabili stabili della struttura
@@ -60,11 +64,7 @@ struct sample_struct {
         return min;
     }
     double Mean(){
-        double sum = 0.0;
-        for (auto c : data)
-            sum += c;
-        double mean = sum / data.size();
-        return mean;
+        return M_Mean(data);
     }
     double Median(){
         vector<double> sort_data = data;
@@ -75,33 +75,17 @@ struct sample_struct {
         return (sort_data[half] + sort_data[half + 1]) / 2.0;
     }
 
-    // sommatoria del quadrato degli scarti
-    double Summation(){
-        double summation = 0.0;
-        double m = Mean();
-        for (auto c : data)
-            summation += pow((c - m), 2.0);
-        return summation;
-    }
-    // formula generica della deviazione standard
-    double GetStdDev(int data_len){
-        double std_dev = sqrt(Summation() / data_len);
-        return std_dev;
-    }
     // deviazione standard campionaria
     double StdDev(){
-        double std_dev = GetStdDev(data.size());
-        return std_dev;
+        return M_GetStdDev(data, data.size());
     }
     // deviazione standard singola misura
     double StdDevCorr(){
-        double std_dev_corr = GetStdDev(data.size() - 1);
-        return std_dev_corr;
+        return M_GetStdDev(data, (data.size() - 1));
     }
     // deviazione standard sulla media
     double StdDevMean(){
-        double std_dev_mean = StdDevCorr()/sqrt(data.size());
-        return std_dev_mean;
+        return StdDevCorr()/sqrt(data.size());
     }
 
     // eliminazione dei dati secondo la regola del 3-sigma
@@ -125,7 +109,7 @@ struct sample_struct {
         cout<< "Minimum value: "    << Min()        << "s\t\tMaximum value: "       << Max()        << 's' <<endl;
         cout<< "Mean value: "       << Mean()       << "s\t\tMedian value: "        << Median()     << 's' <<endl;
         cout<< "Std. deviation: "   << StdDev()     << "s\tCorrected std. dev.: "   << StdDevCorr() 
-            << "s\t\tMean std. dev.: " << StdDevMean() << 's' <<endl <<endl;
+        << "s\t\tMean std. dev.: "  << StdDevMean() << 's' <<endl <<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
@@ -159,7 +143,7 @@ struct speed_struct{
 
 struct interpol_struct{
     string dirname;
-    double acc, acc_sigma, sp0, sp0_sigma, grav, grav_sigma, sp_sigma_post, chi;
+    double acc, acc_sigma, sp0, sp0_sigma, grav, grav_sigma, sp_sigma_post, coeff_corr;
     interpol_struct(vector<speed_struct> speeds, string foldername, double sin_a, double a_sigma){
         dirname = foldername;
         AccQ(speeds);
@@ -167,7 +151,7 @@ struct interpol_struct{
         GSigma(sin_a, a_sigma);
         SpSigmaPost(speeds);
         double grav_real = 9.806;
-        chi = pow((grav - grav_real) / grav_sigma, 2.0);
+        CoeffCorr(speeds);
     }
     void AccQ(vector<speed_struct> speeds){
         double one = 0.0, xone = 0.0, xtwo = 0.0, yone = 0.0, xy = 0.0;
@@ -193,9 +177,24 @@ struct interpol_struct{
     void SpSigmaPost(vector<speed_struct> speeds){
         double num = 0.0;
         for (auto c : speeds)
-            num += pow ((c.speed - acc * c.time - sp0), 2.0);
+            num += pow ((c.speed - (acc * c.time) - sp0), 2.0);
         double den = speeds.size() - 2.0;
         sp_sigma_post = sqrt(num / den);
+    }
+    void CoeffCorr(vector<speed_struct> speeds){
+        vector<double> xs, ys, xys;
+        int data_len = speeds.size();
+        for (auto c : speeds){
+            xs.push_back(c.time);
+            ys.push_back(c.speed);
+            xys.push_back(c.time * c.speed);
+        }
+        double xs_mean = M_Mean(xs);
+        double ys_mean = M_Mean(ys);
+        double xys_mean = M_Mean(xys);
+        double var_x = M_GetStdDev(xs, data_len);
+        double var_y = M_GetStdDev(ys, data_len);
+        coeff_corr = (xys_mean - xs_mean * ys_mean) / (var_x * var_y);
     }
     void PrintData(){
         cout<< setprecision(4);
@@ -205,7 +204,7 @@ struct interpol_struct{
         cout<< "b = " << sp0    << " m/s\t±"    << sp0_sigma    << " m/s"   <<endl;
         cout<< "g = " << grav   << " m/s²\t±"   << grav_sigma   << " m/s²"  <<endl;
         cout<< "Post. speed sigma = "           << sp_sigma_post<< " m/s"   <<endl;
-        cout<< "Chi square = "                  << chi          <<endl<<endl;
+        cout<< "Correletion coefficient = "     << coeff_corr   <<endl<<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
@@ -340,4 +339,27 @@ void SpeedFileOut(vector<speed_struct> speeds, string foldername){
 
 void PrintEoF(){
     cout<<endl << string(100, '=') <<endl <<endl;
+}
+
+//funzioni per l'elaborazione dati
+
+double M_Mean(vector<double> data){
+    double sum = 0.0;
+    for (auto c : data)
+        sum += c;
+    double mean = sum / data.size();
+    return mean;
+}
+// sommatoria del quadrato degli scarti
+double M_Summation(vector<double> data){
+    double summation = 0.0;
+    double m = M_Mean(data);
+    for (auto c : data)
+        summation += pow((c - m), 2.0);
+    return summation;
+}
+// formula generica della deviazione standard
+double M_GetStdDev(vector<double> data, int data_len){
+    double std_dev = sqrt(M_Summation(data) / data_len);
+    return std_dev;
 }
