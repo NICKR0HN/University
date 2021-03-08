@@ -11,6 +11,7 @@
 
 using namespace std;
 
+// prototipi di funzioni utilizzate nelle strutture
 double M_Mean(vector<double>);
 double M_Summation(vector<double>);
 double M_GetStdDev(vector<double>, int);
@@ -114,10 +115,11 @@ struct sample_struct {
     }
 };
 
-//struttura per immagazzinare i dati relativi alle velocità dei singoli segmenti
+// struttura per le velocità di ciascun segmento (confronto tra file nella stessa cartella)
 struct speed_struct{
     double speed, sp_sigma, time, tm_sigma, ds, ds_sigma, dt, dt_sigma, min, max;
     string ranges;
+    // costruttore
     speed_struct(sample_struct n1, sample_struct n2, double d_sigma){
         min = n1.dist;
         max = n2.dist;
@@ -130,6 +132,7 @@ struct speed_struct{
         speed = ds / dt;
         sp_sigma = abs(speed) * sqrt(pow((ds_sigma / ds), 2.0) + pow((dt_sigma / dt), 2.0));
     }
+    // stampa su console
     void PrintData(){
         cout<< "Range:\t\t("        << min      << " - "        << max      << ") m"    <<endl;
         cout<< "Distance:\t"        << ds       << " m\t\t±"    << ds_sigma << " m"     <<endl;
@@ -141,9 +144,11 @@ struct speed_struct{
     }
 };
 
+// struttura per ciascuna retta di interpolazione (unione dei dati in ogni cartella)
 struct interpol_struct{
     string dirname;
     double acc, acc_sigma, sp0, sp0_sigma, grav, grav_sigma, sp_sigma_post, coeff_corr;
+    // costruttore
     interpol_struct(vector<speed_struct> speeds, string foldername, double sin_a, double a_sigma){
         dirname = foldername;
         AccQ(speeds);
@@ -153,6 +158,7 @@ struct interpol_struct{
         double grav_real = 9.806;
         CoeffCorr(speeds);
     }
+    // funzioni per il calcolo delle variabili
     void AccQ(vector<speed_struct> speeds){
         double one = 0.0, xone = 0.0, xtwo = 0.0, yone = 0.0, xy = 0.0;
         for (auto c : speeds){
@@ -196,6 +202,7 @@ struct interpol_struct{
         double var_y = M_GetStdDev(ys, data_len);
         coeff_corr = (xys_mean - xs_mean * ys_mean) / (var_x * var_y);
     }
+    // stampa su console
     void PrintData(){
         cout<< setprecision(4);
         cout<< "Dataset: "  << dirname  <<endl;
@@ -209,6 +216,7 @@ struct interpol_struct{
     }
 };
 
+// prototipi di funzioni usate nel main
 vector<string> GetFiles(string);
 vector<sample_struct> ElaborateData(vector<string>);
 vector<speed_struct> SpeedCalc(vector<sample_struct>, double);
@@ -217,6 +225,7 @@ void SpeedPrint(vector<speed_struct>);
 void SpeedFileOut(vector<speed_struct>, string);
 void PrintEoF();
 
+// variabili globali per la gestione delle cartelle su cui lavora il programma
 const string idir = "./data";
 const string odir = "./output";
 
@@ -228,13 +237,13 @@ int main(){
     cin >> sin_a;       // 0.01308959557
     cout<< "Insert the standard deviation for the angle (in rad): ";
     cin >> a_sigma;     // 0.00002908882087
-    vector<string> foldernames = GetFiles(idir);
+    vector<string> foldernames = GetFiles(idir);        // lettura delle cartelle con i dati
     vector<interpol_struct> lines;
     for (auto c : foldernames){
-        vector<string> filenames = GetFiles(c);
+        vector<string> filenames = GetFiles(c);         // lettura dei file in ciascuna cartella
         vector<sample_struct> samples = ElaborateData(filenames);
         vector<speed_struct> speeds = SpeedCalc(samples, d_sigma);
-        // SpeedPrint(speeds);
+        SpeedPrint(speeds);
         SpeedFileOut(speeds, c);
         interpol_struct line = interpol_struct(speeds, c, sin_a, a_sigma);
         lines.push_back(line);
@@ -245,7 +254,7 @@ int main(){
     return 0;
 }
 
-//ottiene i nomi di tutti i file presenti nella cartella "data"
+// ottiene i nomi di tutti i file presenti nella cartella di input
 vector<string> GetFiles(string wdir){
     vector<string> filenames;
     const char *wdirname = wdir.c_str();
@@ -285,14 +294,15 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
         vector<double> removed_data;
         do {
             removed_data = sample.Refine();
-            // RemDataPrint(removed_data);
+            RemDataPrint(removed_data);
         } while (removed_data.size());
-        // sample.PrintData();
+        sample.PrintData();
         samples.push_back(sample);
     }
     return samples;
 }
 
+// stampa dei dati rimossi per la regola del 3-sigma
 void RemDataPrint(vector<double> removed_data){
     if (removed_data.size()){
         cout<< "Removed data:" <<endl;
@@ -304,7 +314,7 @@ void RemDataPrint(vector<double> removed_data){
     else cout<< "All data is compatible" <<endl <<endl;
 }
 
-//crea una struttura velocità per ciascun segmento
+// crea una struttura velocità per ciascun segmento
 vector<speed_struct> SpeedCalc(vector<sample_struct> samples, double d_sigma){
     vector<speed_struct> speeds;
     PrintEoF();
@@ -320,6 +330,7 @@ void SpeedPrint(vector<speed_struct> speeds){
         c.PrintData();
 }
 
+// crea i file di output del programma (uno per ogni cartella)
 void SpeedFileOut(vector<speed_struct> speeds, string foldername){
     istringstream folderin(foldername);
     string filename;
@@ -341,7 +352,7 @@ void PrintEoF(){
     cout<<endl << string(100, '=') <<endl <<endl;
 }
 
-//funzioni per l'elaborazione dati
+// funzioni utilizzate dentro le strutture
 
 double M_Mean(vector<double> data){
     double sum = 0.0;
