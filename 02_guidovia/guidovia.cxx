@@ -147,15 +147,18 @@ struct speed_struct{
 // struttura per ciascuna retta di interpolazione (unione dei dati in ogni cartella)
 struct interpol_struct{
     string dirname;
-    double acc, acc_sigma, sp0, sp0_sigma, grav, grav_sigma, sp_sigma_post, coeff_corr;
+    double acc, acc_sigma, sp0, sp0_sigma, grav, grav_sigma, coeff_corr;
+    double sp_sigma_p, acc_p, acc_sigma_p, sp0_p, sp0_sigma_p, grav_p, grav_sigma_p;
     // costruttore
     interpol_struct(vector<speed_struct> speeds, string foldername, double sin_a, double a_sigma){
         dirname = foldername;
         AccQ(speeds);
         grav = acc / sin_a;
-        GSigma(sin_a, a_sigma);
+        grav_sigma = GSigma(acc, acc_sigma, sin_a, a_sigma);
         SpSigmaPost(speeds);
-        double grav_real = 9.806;
+        AccQ_P(speeds);
+        grav_p = acc_p / sin_a;
+        grav_sigma_p = GSigma(acc_p, acc_sigma_p, sin_a, a_sigma);
         CoeffCorr(speeds);
     }
     // funzioni per il calcolo delle variabili
@@ -175,17 +178,10 @@ struct interpol_struct{
         acc_sigma = sqrt(one / delta);
         sp0_sigma = sqrt(xtwo / delta);
     }
-    void GSigma(double sin_a, double a_sigma){
-        double a = pow((acc_sigma / sin_a), 2.0);
-        double b = (1.0 - pow(sin_a, 2.0)) * pow((acc * a_sigma / sin_a), 2.0);
-        grav_sigma = sqrt(a + b);
-    }
-    void SpSigmaPost(vector<speed_struct> speeds){
-        double num = 0.0;
-        for (auto c : speeds)
-            num += pow ((c.speed - (acc * c.time) - sp0), 2.0);
-        double den = speeds.size() - 2.0;
-        sp_sigma_post = sqrt(num / den);
+    double GSigma(double acc_f, double acc_s, double sin_a, double a_sigma){
+        double a = pow((acc_s / sin_a), 2.0);
+        double b = (1.0 - pow(sin_a, 2.0)) * pow((acc_f * a_sigma / sin_a), 2.0);
+        return sqrt(a + b);
     }
     void CoeffCorr(vector<speed_struct> speeds){
         vector<double> xs, ys, xys;
@@ -202,6 +198,28 @@ struct interpol_struct{
         double var_y = M_GetStdDev(ys, data_len);
         coeff_corr = (xys_mean - xs_mean * ys_mean) / (var_x * var_y);
     }
+    void SpSigmaPost(vector<speed_struct> speeds){
+        double num = 0.0;
+        for (auto c : speeds)
+            num += pow ((c.speed - (acc * c.time) - sp0), 2.0);
+        double den = speeds.size() - 2.0;
+        sp_sigma_p = sqrt(num / den);
+    }
+    void AccQ_P(vector<speed_struct> speeds){
+        double xone = 0.0, xtwo = 0.0, yone = 0.0, xy = 0.0;
+        int N = speeds.size();
+        for (auto c : speeds){
+            xone += c.time;
+            xtwo += c.time * c.time;
+            yone += c.speed;
+            xy += c.time * c.speed;
+        }
+        double delta = (N * xtwo) - (xone * xone);
+        acc_p = ((N * xy) - (xone * yone)) / delta;
+        sp0_p = ((xtwo * yone) - (xone * xy)) / delta;
+        acc_sigma_p = sp_sigma_p * sqrt(N / delta);
+        sp0_sigma_p = sp_sigma_p * sqrt(xtwo / delta);
+    }
     // stampa su console
     void PrintData(){
         cout<< setprecision(4);
@@ -210,8 +228,11 @@ struct interpol_struct{
         cout<< "a = " << acc    << " m/s²\t±"   << acc_sigma    << " m/s²"  <<endl;
         cout<< "b = " << sp0    << " m/s\t±"    << sp0_sigma    << " m/s"   <<endl;
         cout<< "g = " << grav   << " m/s²\t±"   << grav_sigma   << " m/s²"  <<endl;
-        cout<< "Post. speed sigma = "           << sp_sigma_post<< " m/s"   <<endl;
         cout<< "Correletion coefficient = "     << coeff_corr   <<endl<<endl;
+        cout<< "Post. speed sigma = "           << sp_sigma_p   << " m/s"   <<endl;
+        cout<< "a = " << acc_p  << " m/s²\t±"   << acc_sigma_p  << " m/s²"  <<endl;
+        cout<< "b = " << sp0_p  << " m/s\t±"    << sp0_sigma_p  << " m/s"   <<endl;
+        cout<< "g = " << grav_p << " m/s²\t±"   << grav_sigma_p << " m/s²"  <<endl<<endl;
         cout<< string(100, '-') <<endl <<endl;
     }
 };
