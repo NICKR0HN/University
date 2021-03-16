@@ -25,6 +25,8 @@ struct sample_struct{
     vector<double> forces, lengths;
     double force_sigma, length_sigma;
     double k_line, q_line, k_line_sig, q_line_sig;
+    vector<double> k_vector, k_sigma_vector;
+    double k_mean, k_mean_sigma;
     sample_struct(string filepath){
         filename = filepath;
         ReadFile();
@@ -69,10 +71,34 @@ struct sample_struct{
         q_line_sig = length_sigma * sqrt(xtwo / delta);
     }
     
+    void KVector(){
+        double df, df_sigma, dx, dx_sigma, k, k_sigma;
+        int k_size = floor((forces.size() / 2));
+        dx_sigma = length_sigma * sqrt(2.0);
+        df_sigma = force_sigma * sqrt(2.0);
+        for (int i = 0; i < k_size; i++){
+            dx = lengths[2 * i + 1] - lengths[2 * i];
+            df = forces[2 * i + 1] - forces[2 * i];
+            k = dx / df;
+            k_vector.push_back(k);
+            k_sigma = abs(k) * sqrt(pow((dx_sigma / dx), 2.0) + pow((df_sigma / df), 2.0));
+            k_sigma_vector.push_back(k_sigma);
+        }
+        double num = 0.0, den = 0.0, sig = 0.0;
+        for (int i = 0; i < k_size; i++){
+            double sq_sig = pow(k_sigma_vector[i], 2.0);
+            num += k_vector[i] / sq_sig;
+            den += 1.0 / sq_sig;
+            sig += sq_sig;
+        }
+        k_mean = num / den;
+        k_mean_sigma = sqrt(sig) / k_size;
+    }
+
     void PrintData(){
         cout<< filename <<endl<<endl;
         PrintInterpol();
-        // cout<< string(40, '-') <<endl <<endl;
+        cout<< string(40, '-') <<endl <<endl;
         PrintKVector();
         PrintEoF();
     }
@@ -83,7 +109,8 @@ struct sample_struct{
         cout<< "q = " << q_line     << " m\t±"      << q_line_sig   << " m"     <<endl;
     }
     void PrintKVector(){
-
+        cout<< setprecision(4);
+        cout<< "Mean k = " << k_mean    << "m/N\t±" << k_mean_sigma << " m/N"   <<endl;
     }
 };
 
