@@ -13,11 +13,15 @@ using namespace std;
 // variabili globali
 const string idir = "./data";
 const string odir = "./output";
-const double x_factor = 4.0 * 9.806 * 0.001;
-const double y_factor = 0.000001;
+const double f_factor = 4.0 * 9.806 * 0.001;
+const double l_factor = 0.000001;
 
+//funzioni utili per la stampa su console
 void PrintEoF(){
-    cout<<endl << string(40, '=') <<endl <<endl;
+    cout<<endl << string(68, '=') <<endl <<endl;
+}
+template <typename T> void Cell(T text){
+    cout<< setw(14) << right << text;
 }
 
 struct sample_struct{
@@ -25,6 +29,7 @@ struct sample_struct{
     vector<double> forces, lengths;
     double force_sigma, length_sigma;
     double k_line, q_line, k_line_sig, q_line_sig;
+    double sigma_post, k_line_sig_p, q_line_sig_p;
     vector<double> k_vector, k_sigma_vector;
     double k_mean, k_mean_sigma;
     sample_struct(string filepath){
@@ -43,14 +48,14 @@ struct sample_struct{
         }
         double force_sigma_r, length_sigma_r;
         input_file >> force_sigma_r;
-        force_sigma = force_sigma_r * x_factor;
+        force_sigma = force_sigma_r * f_factor;
         input_file >> length_sigma_r;
-        length_sigma = length_sigma_r * y_factor;
+        length_sigma = length_sigma_r * l_factor;
         double force_r, force, length_r, length;
         while ((input_file >> force_r) && (input_file >> length_r)){
-            force = force_r * x_factor;
+            force = force_r * f_factor;
             forces.push_back(force);
-            length = length_r * y_factor;
+            length = length_r * l_factor;
             lengths.push_back(length);
         }
         input_file.close();
@@ -70,6 +75,12 @@ struct sample_struct{
         q_line = ((xtwo * yone) - (xone * xy)) / delta;
         k_line_sig = length_sigma * sqrt(N / delta);
         q_line_sig = length_sigma * sqrt(xtwo / delta);
+        double num = 0.0;
+        for (int i = 0; i < N; i++)
+            num += pow ((lengths[i] - (k_line * forces[i]) - q_line), 2.0);
+        sigma_post = sqrt(num / (N - 2.0));
+        k_line_sig_p = sigma_post * sqrt(N / delta);
+        q_line_sig_p = sigma_post * sqrt(xtwo / delta);
     }
     
     void KVector(){
@@ -98,9 +109,10 @@ struct sample_struct{
 
     void PrintData(){
         cout<< filename <<endl<<endl;
-        PrintInterpol();
+        PrintTable();
+        /* PrintInterpol();
         cout<< string(40, '-') <<endl <<endl;
-        PrintKVector();
+        PrintKVector(); */
         PrintEoF();
     }
     void PrintInterpol(){
@@ -113,6 +125,13 @@ struct sample_struct{
         cout<< setprecision(4);
         cout<< "Mean k = " << k_mean    << "m/N\t±" << k_mean_sigma << " m/N"   <<endl;
     }
+    void PrintTable(){
+        cout<< setprecision(4);
+        cout<< setw(12) << left << ' ';             Cell("k (m/N)");    Cell("sigma (m/N)");    Cell("q (m)");  Cell("sigma (m)");  cout<<endl;
+        cout<< setw(12) << left << "Interpol.";     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
+        cout<< setw(12) << left << "Post. sigma";   Cell(k_line);       Cell(k_line_sig_p);     Cell(q_line);   Cell(q_line_sig_p); cout<<endl;
+        cout<< setw(12) << left << "Mean k";        Cell(k_mean);       Cell(k_mean_sigma);     cout<<endl;
+    }
 };
 
 //prototipi funzioni
@@ -120,7 +139,6 @@ vector<string> GetFiles(string);
 vector<sample_struct> ElaborateData(vector<string>);
 
 int main(){
-
     vector<string> foldernames = GetFiles(idir);        // lettura delle cartelle con i dati
     for (string folder : foldernames){
         vector<string> filenames = GetFiles(folder);
