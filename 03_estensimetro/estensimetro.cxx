@@ -31,6 +31,7 @@ struct sample_struct{
         filename = filepath;
         ReadFile();
         Interpol();
+        KVector();
         PrintData();
     }
 
