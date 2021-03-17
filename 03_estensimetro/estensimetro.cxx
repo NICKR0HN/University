@@ -18,11 +18,13 @@ const double l_factor = 0.000001;
 
 //funzioni utili per la stampa su console
 void PrintEoF(){
-    cout<<endl << string(68, '=') <<endl <<endl;
+    cout<<endl << string(72, '=') <<endl <<endl;
 }
 template <typename T> void Cell(T text){
     cout<< setw(14) << right << text;
 }
+
+double Compatibility(double, double, double, double);
 
 struct sample_struct{
     string filename;
@@ -31,12 +33,13 @@ struct sample_struct{
     double k_line, q_line, k_line_sig, q_line_sig;
     double sigma_post, k_line_sig_p, q_line_sig_p;
     vector<double> k_vector, k_sigma_vector;
-    double k_mean, k_mean_sigma;
+    double k_mean, k_mean_sigma, compatible;
     sample_struct(string filepath){
         filename = filepath;
         ReadFile();
         Interpol();
         KVector();
+        compatible = Compatibility(k_line, k_mean, k_line_sig_p, k_mean_sigma);
         PrintData();
     }
 
@@ -110,33 +113,23 @@ struct sample_struct{
     void PrintData(){
         cout<< filename <<endl<<endl;
         PrintTable();
-        /* PrintInterpol();
-        cout<< string(40, '-') <<endl <<endl;
-        PrintKVector(); */
         PrintEoF();
     }
-    void PrintInterpol(){
-        cout<< setprecision(4);
-        cout<< "y = kx + q"             <<endl;
-        cout<< "k = " << k_line     << " m/N\t±"    << k_line_sig   << " m/N"   <<endl;
-        cout<< "q = " << q_line     << " m\t±"      << q_line_sig   << " m"     <<endl;
-    }
-    void PrintKVector(){
-        cout<< setprecision(4);
-        cout<< "Mean k = " << k_mean    << "m/N\t±" << k_mean_sigma << " m/N"   <<endl;
-    }
+    
     void PrintTable(){
         cout<< setprecision(4);
-        cout<< setw(12) << left << ' ';             Cell("k (m/N)");    Cell("sigma (m/N)");    Cell("q (m)");  Cell("sigma (m)");  cout<<endl;
-        cout<< setw(12) << left << "Interpol.";     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
-        cout<< setw(12) << left << "Post. sigma";   Cell(k_line);       Cell(k_line_sig_p);     Cell(q_line);   Cell(q_line_sig_p); cout<<endl;
-        cout<< setw(12) << left << "Mean k";        Cell(k_mean);       Cell(k_mean_sigma);     cout<<endl;
+        cout<< setw(15) << left << ' ';             Cell("k (m/N)");    Cell("sigma (m/N)");    Cell("q (m)");  Cell("sigma (m)");  cout<<endl;
+        cout<< setw(15) << left << "Interpol.";     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
+        cout<< setw(15) << left << "Post. sigma";   Cell(k_line);       Cell(k_line_sig_p);     Cell(q_line);   Cell(q_line_sig_p); cout<<endl;
+        cout<< setw(15) << left << "Mean k";        Cell(k_mean);       Cell(k_mean_sigma);     cout<<endl;
+        cout<< setw(15) << left << "Compatibility"; Cell(compatible);   cout<<endl;
     }
 };
 
 //prototipi funzioni
 vector<string> GetFiles(string);
 vector<sample_struct> ElaborateData(vector<string>);
+void PrintComp(vector<sample_struct>);
 
 int main(){
     vector<string> foldernames = GetFiles(idir);        // lettura delle cartelle con i dati
@@ -179,4 +172,17 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
         samples.push_back(sample);
     }
     return samples;
+}
+
+/* void PrintComp(vector<sample_struct> samples){
+    double comp_s1, comp_s2, comp_12;
+    comp_s1 = Compatibility()
+} */
+
+double Compatibility(double x, double y, double x_s, double y_s){
+    double comp, num, den;
+    num = abs(x - y);
+    den = sqrt((x_s * x_s) + (y_s * y_s));
+    comp = num / den;
+    return comp;
 }
