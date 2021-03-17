@@ -119,7 +119,7 @@ struct sample_struct{
     void PrintTable(){
         cout<< setprecision(4);
         cout<< setw(15) << left << ' ';             Cell("k (m/N)");    Cell("sigma (m/N)");    Cell("q (m)");  Cell("sigma (m)");  cout<<endl;
-        cout<< setw(15) << left << "Interpol.";     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
+        // cout<< setw(15) << left << "Interpol.";     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
         cout<< setw(15) << left << "Post. sigma";   Cell(k_line);       Cell(k_line_sig_p);     Cell(q_line);   Cell(q_line_sig_p); cout<<endl;
         cout<< setw(15) << left << "Mean k";        Cell(k_mean);       Cell(k_mean_sigma);     cout<<endl;
         cout<< setw(15) << left << "Compatibility"; Cell(compatible);   cout<<endl;
@@ -129,13 +129,14 @@ struct sample_struct{
 //prototipi funzioni
 vector<string> GetFiles(string);
 vector<sample_struct> ElaborateData(vector<string>);
-void PrintComp(vector<sample_struct>);
+void Compare(vector<sample_struct>);
 
 int main(){
     vector<string> foldernames = GetFiles(idir);        // lettura delle cartelle con i dati
     for (string folder : foldernames){
         vector<string> filenames = GetFiles(folder);
         vector<sample_struct> samples = ElaborateData(filenames);
+        Compare(samples);
     }
     return 0;
 }
@@ -174,10 +175,14 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
     return samples;
 }
 
-/* void PrintComp(vector<sample_struct> samples){
-    double comp_s1, comp_s2, comp_12;
-    comp_s1 = Compatibility()
-} */
+void Compare(vector<sample_struct> samples){
+    double comp_lines, comp_means;
+    comp_lines = Compatibility(samples[0].k_line, samples[1].k_line, samples[0].k_line_sig_p, samples[1].k_line_sig_p);
+    comp_means = Compatibility(samples[0].k_mean, samples[1].k_mean, samples[0].k_mean_sigma, samples[1].k_mean_sigma);
+    cout << setw(20) << left << "Line compatibility"; Cell(comp_lines); cout<<endl;
+    cout << setw(20) << left << "Mean compatibility"; Cell(comp_means); cout<<endl;
+    PrintEoF();
+}
 
 double Compatibility(double x, double y, double x_s, double y_s){
     double comp, num, den;
