@@ -30,18 +30,26 @@ double MeanSigma(vector<double>);
 
 struct sample_struct{
     string filename;
+    int data_size = 0;
     vector<double> forces, lengths;
     double force_sigma, length_sigma;
     double k_line, q_line, k_line_sig, q_line_sig;
     double sigma_post, k_line_sig_p, q_line_sig_p;
-    vector<double> k_vector, k_sigma_vector;
-    double k_mean, k_mean_sigma, compatible;
+    array<double,2> k_mean;
+    array<double,2> k_mean_sigma;
+    double comp_a_0, comp_a_1, comp_0_1;
     sample_struct(string filepath){
         filename = filepath;
         ReadFile();
         Interpol();
-        KVector();
-        compatible = Compatibility(k_line, k_mean, k_line_sig_p, k_mean_sigma);
+        for (int i = 0; i < 2; i++){
+            array<double,2> out = KVector(i);
+            k_mean[i] = out[0];
+            k_mean_sigma [i] = out[1];
+        }
+        comp_a_0 = Compatibility(k_line, k_mean[0], k_line_sig_p, k_mean_sigma[0]);
+        comp_a_1 = Compatibility(k_line, k_mean[1], k_line_sig_p, k_mean_sigma[1]);
+        comp_0_1 = Compatibility(k_mean[0], k_mean[1], k_mean_sigma[0], k_mean_sigma[1]);
         PrintData();
     }
 
@@ -62,47 +70,49 @@ struct sample_struct{
             forces.push_back(force);
             length = length_r * l_factor;
             lengths.push_back(length);
+            data_size++;
         }
         input_file.close();
     }
 
     void Interpol(){
         double xone = 0.0, xtwo = 0.0, yone = 0.0, xy = 0.0;
-        int N = forces.size();
-        for (int i = 0; i < N; i++){
+        for (int i = 0; i < data_size; i++){
             xone += forces[i];
             xtwo += pow(forces[i], 2.0);
             yone += lengths[i];
             xy += forces[i] * lengths[i];
         }
-        double delta = (N * xtwo) - (xone * xone);
-        k_line = ((N * xy) - (xone * yone)) / delta;
+        double delta = (data_size * xtwo) - (xone * xone);
+        k_line = ((data_size * xy) - (xone * yone)) / delta;
         q_line = ((xtwo * yone) - (xone * xy)) / delta;
-        k_line_sig = length_sigma * sqrt(N / delta);
+        k_line_sig = length_sigma * sqrt(data_size / delta);
         q_line_sig = length_sigma * sqrt(xtwo / delta);
         double num = 0.0;
-        for (int i = 0; i < N; i++)
+        for (int i = 0; i < data_size; i++)
             num += pow ((lengths[i] - (k_line * forces[i]) - q_line), 2.0);
-        sigma_post = sqrt(num / (N - 2.0));
-        k_line_sig_p = sigma_post * sqrt(N / delta);
+        sigma_post = sqrt(num / (data_size - 2.0));
+        k_line_sig_p = sigma_post * sqrt(data_size / delta);
         q_line_sig_p = sigma_post * sqrt(xtwo / delta);
     }
     
-    void KVector(){
+    array<double,2> KVector(int odd){
+        array<double,2> out;
         double df, df_sigma, dx, dx_sigma, k, k_sigma;
-        int k_size = floor((forces.size() / 2));
+        vector<double> k_vector, k_sigma_vector;
         dx_sigma = length_sigma * sqrt(2.0);
         df_sigma = force_sigma * sqrt(2.0);
-        for (int i = 0; i < k_size; i++){
-            dx = lengths[2 * i + 1] - lengths[2 * i];
-            df = forces[2 * i + 1] - forces[2 * i];
+        for (int i = odd; i < (data_size - 1); i++){
+            dx = lengths[i + 1] - lengths[i];
+            df = forces[i + 1] - forces[i];
             k = dx / df;
             k_vector.push_back(k);
             k_sigma = abs(k) * sqrt(pow((dx_sigma / dx), 2.0) + pow((df_sigma / df), 2.0));
             k_sigma_vector.push_back(k_sigma);
         }
-        k_mean = WeightedMean(k_vector, k_sigma_vector);
-        k_mean_sigma = MeanSigma(k_sigma_vector);
+        out[0] = WeightedMean(k_vector, k_sigma_vector);
+        out[1] = MeanSigma(k_sigma_vector);
+        return out;
     }
 
     void PrintData(){
@@ -113,11 +123,14 @@ struct sample_struct{
     
     void PrintTable(){
         cout<< setprecision(5);
-        cout<< setw(15) << left << ' ';             Cell("k (m/N)");    Cell("sigma (m/N)");    Cell("q (m)");  Cell("sigma (m)");  cout<<endl;
-        cout<< setw(15) << left << "Interpol.";     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
-        cout<< setw(15) << left << "Post. sigma";   Cell(k_line);       Cell(k_line_sig_p);     Cell(q_line);   Cell(q_line_sig_p); cout<<endl;
-        cout<< setw(15) << left << "Mean k";        Cell(k_mean);       Cell(k_mean_sigma);     cout<<endl;
-        cout<< setw(15) << left << "Compatibility"; Cell(compatible);   cout<<endl;
+        cout<< setw(13) << left << "Data size = "   << data_size;   Cell("k (m/N)");    Cell("sigma (m/N)");    Cell("q (m)");  Cell("sigma (m)");  cout<<endl;
+        cout<< setw(15) << left << "Interpol.";                     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
+        cout<< setw(15) << left << "Post. sigma";                   Cell(k_line);       Cell(k_line_sig_p);     Cell(q_line);   Cell(q_line_sig_p); cout<<endl;
+        cout<< setw(15) << left << "Mean k1";                       Cell(k_mean[0]);     Cell(k_mean_sigma[0]);   cout<<endl;
+        cout<< setw(15) << left << "Mean k2";                       Cell(k_mean[1]);     Cell(k_mean_sigma[1]);   cout<<endl;
+        cout<< setw(15) << left << "Comp. line-k1";                 Cell(comp_a_0);     cout<<endl;
+        cout<< setw(15) << left << "Comp. line-k2";                 Cell(comp_a_1);     cout<<endl;
+        cout<< setw(15) << left << "Comp. k1-k2";                   Cell(comp_0_1);     cout<<endl;
     }
 };
 
@@ -171,11 +184,13 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
 }
 
 void Compare(vector<sample_struct> samples){
-    double comp_lines, comp_means;
-    comp_lines = Compatibility(samples[0].k_line, samples[1].k_line, samples[0].k_line_sig_p, samples[1].k_line_sig_p);
-    comp_means = Compatibility(samples[0].k_mean, samples[1].k_mean, samples[0].k_mean_sigma, samples[1].k_mean_sigma);
-    cout << setw(20) << left << "Line compatibility";   Cell(comp_lines); cout<<endl;
-    cout << setw(20) << left << "Mean compatibility";   Cell(comp_means); cout<<endl<<endl;
+    double comp_lines = Compatibility(samples[0].k_line, samples[1].k_line, samples[0].k_line_sig_p, samples[1].k_line_sig_p);
+    cout<< "Line compatibility      ";   Cell(comp_lines); cout<<endl;
+    for(int i = 0; i < 2; i++)
+        for(int j = 0; j < 2; j++){
+            double comp_means = Compatibility(samples[0].k_mean[i], samples[1].k_mean[j], samples[0].k_mean_sigma[i], samples[1].k_mean_sigma[j]);
+            cout<< "Mean compatibility " << (i + 1) << " - " << (j + 1);  Cell(comp_means);  cout<<endl;
+        }
     PrintEoF();
 }
 
@@ -204,6 +219,6 @@ double MeanSigma(vector<double> sigmas){
     double sig = 0.0;
     for(double sigma : sigmas)
         sig += sigma * sigma;
-    double MeanSigma = sig / sigmas.size();
+    double MeanSigma = sqrt(sig) / sigmas.size();
     return MeanSigma;
 }
