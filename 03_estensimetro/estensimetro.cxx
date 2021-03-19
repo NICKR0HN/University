@@ -25,6 +25,8 @@ template <typename T> void Cell(T text){
 }
 
 double Compatibility(double, double, double, double);
+double WeightedMean(vector<double>, vector<double>);
+double SigmaMean(vector<double>);
 
 struct sample_struct{
     string filename;
@@ -99,15 +101,8 @@ struct sample_struct{
             k_sigma = abs(k) * sqrt(pow((dx_sigma / dx), 2.0) + pow((df_sigma / df), 2.0));
             k_sigma_vector.push_back(k_sigma);
         }
-        double num = 0.0, den = 0.0, sig = 0.0;
-        for (int i = 0; i < k_size; i++){
-            double sq_sig = pow(k_sigma_vector[i], 2.0);
-            num += k_vector[i] / sq_sig;
-            den += 1.0 / sq_sig;
-            sig += sq_sig;
-        }
-        k_mean = num / den;
-        k_mean_sigma = sqrt(sig) / k_size;
+        k_mean = WeightedMean(k_vector, k_sigma_vector);
+        k_mean_sigma = MeanSigma(k_sigma_vector);
     }
 
     void PrintData(){
@@ -117,9 +112,9 @@ struct sample_struct{
     }
     
     void PrintTable(){
-        cout<< setprecision(4);
+        cout<< setprecision(5);
         cout<< setw(15) << left << ' ';             Cell("k (m/N)");    Cell("sigma (m/N)");    Cell("q (m)");  Cell("sigma (m)");  cout<<endl;
-        // cout<< setw(15) << left << "Interpol.";     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
+        cout<< setw(15) << left << "Interpol.";     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
         cout<< setw(15) << left << "Post. sigma";   Cell(k_line);       Cell(k_line_sig_p);     Cell(q_line);   Cell(q_line_sig_p); cout<<endl;
         cout<< setw(15) << left << "Mean k";        Cell(k_mean);       Cell(k_mean_sigma);     cout<<endl;
         cout<< setw(15) << left << "Compatibility"; Cell(compatible);   cout<<endl;
@@ -179,8 +174,8 @@ void Compare(vector<sample_struct> samples){
     double comp_lines, comp_means;
     comp_lines = Compatibility(samples[0].k_line, samples[1].k_line, samples[0].k_line_sig_p, samples[1].k_line_sig_p);
     comp_means = Compatibility(samples[0].k_mean, samples[1].k_mean, samples[0].k_mean_sigma, samples[1].k_mean_sigma);
-    cout << setw(20) << left << "Line compatibility"; Cell(comp_lines); cout<<endl;
-    cout << setw(20) << left << "Mean compatibility"; Cell(comp_means); cout<<endl;
+    cout << setw(20) << left << "Line compatibility";   Cell(comp_lines); cout<<endl;
+    cout << setw(20) << left << "Mean compatibility";   Cell(comp_means); cout<<endl<<endl;
     PrintEoF();
 }
 
@@ -190,4 +185,25 @@ double Compatibility(double x, double y, double x_s, double y_s){
     den = sqrt((x_s * x_s) + (y_s * y_s));
     comp = num / den;
     return comp;
+}
+
+double WeightedMean(vector<double> values, vector<double> sigmas){
+    double num = 0.0, den = 0.0, sig = 0.0;
+    int N = values.size();
+        for (int i = 0; i < N; i++){
+            double sq_sig = pow(sigmas[i], 2.0);
+            num += values[i] / sq_sig;
+            den += 1.0 / sq_sig;
+            sig += sq_sig;
+        }
+        double mean = num / den;
+        return mean;
+}
+
+double MeanSigma(vector<double> sigmas){
+    double sig = 0.0;
+    for(double sigma : sigmas)
+        sig += sigma * sigma;
+    double MeanSigma = sig / sigmas.size();
+    return MeanSigma;
 }
