@@ -26,7 +26,7 @@ template <typename T> void Cell(T text){
 
 double Compatibility(double, double, double, double);
 double WeightedMean(vector<double>, vector<double>);
-double SigmaMean(vector<double>);
+double MeanSigma(vector<double>);
 
 struct sample_struct{
     string filename;
