@@ -43,6 +43,7 @@ struct sample_struct{
     array<double,2> k_mean, k_mean_sigma;
     array<int,2> times_k;
     double comp_a_0, comp_a_1, comp_0_1;
+    double k_final, k_final_sigma;
 
     // costruttore
     sample_struct(string filepath){
@@ -59,6 +60,7 @@ struct sample_struct{
         comp_a_0 = Compatibility(k_line, k_mean[0], k_line_sig_p, k_mean_sigma[0]);
         comp_a_1 = Compatibility(k_line, k_mean[1], k_line_sig_p, k_mean_sigma[1]);
         comp_0_1 = Compatibility(k_mean[0], k_mean[1], k_mean_sigma[0], k_mean_sigma[1]);
+        FinalK();
         PrintData();
     }
 
@@ -138,6 +140,20 @@ struct sample_struct{
         times_k[odd] = count;
     }
 
+    void FinalK(){
+        vector<double> ks {k_line}, ks_sigma {k_line_sig_p};
+        if (comp_a_0 < comp_a_1){
+            ks.push_back(k_mean[0]);
+            ks_sigma.push_back(k_mean_sigma[0]);
+        }
+        else {
+            ks.push_back(k_mean[1]);
+            ks_sigma.push_back(k_mean_sigma[1]);
+        }
+        k_final = WeightedMean(ks, ks_sigma);
+        k_final_sigma = MeanSigma(ks_sigma);
+    }
+
     void PrintData(){
         cout<< filename <<endl<<endl;
         PrintTable();
@@ -149,8 +165,10 @@ struct sample_struct{
         cout<< setw(13) << left << "Data size = "   << data_size;   Cell("k (m/N)");    Cell("sigma (m/N)");    Cell("q (m)");  Cell("sigma (m)");  cout<<endl;
         cout<< setw(15) << left << "Interpol.";                     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
         cout<< setw(15) << left << "Post. sigma";                   Cell(k_line);       Cell(k_line_sig_p);     Cell(q_line);   Cell(q_line_sig_p); cout<<endl;
-        cout<< setw(15) << left << "Mean k1";                       Cell(k_mean[0]);     Cell(k_mean_sigma[0]); Cell(times_k[0]);                   cout<<endl;
-        cout<< setw(15) << left << "Mean k2";                       Cell(k_mean[1]);     Cell(k_mean_sigma[1]); Cell(times_k[1]);                   cout<<endl<<endl;
+        cout<< setw(15) << left << "Mean k1";                       Cell(k_mean[0]);    Cell(k_mean_sigma[0]);  Cell(times_k[0]);                   cout<<endl;
+        cout<< setw(15) << left << "Mean k2";                       Cell(k_mean[1]);    Cell(k_mean_sigma[1]);  Cell(times_k[1]);                   cout<<endl;
+        cout<< setw(15) << left << "Final k";                       Cell(k_final);      Cell(k_final_sigma);    cout<<endl<<endl;
+
         cout<< setw(15) << left << "Post. sigma";                   Cell(sigma_post);   cout<<endl;
         cout<< setprecision(6);
         cout<< setw(15) << left << "Corr. coeff.";                  Cell(corr_coeff);   cout<<endl;
@@ -212,12 +230,27 @@ vector<sample_struct> ElaborateData(vector<string> filenames){
 
 void Compare(vector<sample_struct> samples){
     double comp_lines = Compatibility(samples[0].k_line, samples[1].k_line, samples[0].k_line_sig_p, samples[1].k_line_sig_p);
-    cout<< "Line compatibility      ";   Cell(comp_lines); cout<<endl;
+    cout<< setw(25) << left << "Line compatibility";   Cell(comp_lines); cout<<endl;
     for(int i = 0; i < 2; i++)
         for(int j = 0; j < 2; j++){
             double comp_means = Compatibility(samples[0].k_mean[i], samples[1].k_mean[j], samples[0].k_mean_sigma[i], samples[1].k_mean_sigma[j]);
             cout<< "Mean compatibility " << (i + 1) << " - " << (j + 1);  Cell(comp_means);  cout<<endl;
         }
+    double comp_k_final = Compatibility(samples[0].k_final, samples[1].k_final, samples[0].k_final_sigma, samples[1].k_final_sigma);
+    cout<< setw(25) << left << "Final k compatibility"; Cell(comp_k_final); cout<<endl;
+    cout<<endl << string(72, '-') <<endl <<endl;
+    vector<double> ks_line {samples[0].k_line, samples[1].k_line};
+    vector<double> ks_line_sigma {samples[0].k_line_sig_p, samples[1].k_line_sig_p};
+    double k_line_final = WeightedMean(ks_line, ks_line_sigma);
+    double k_line_final_sigma = MeanSigma(ks_line_sigma);
+    vector<double> ks_final {samples[0].k_final, samples[1].k_final};
+    vector<double> ks_final_sigma {samples[0].k_final_sigma, samples[1].k_final_sigma};
+    double k_final_final = WeightedMean(ks_final, ks_final_sigma);
+    double k_final_final_sigma = MeanSigma(ks_final_sigma);
+    cout<< setprecision(5);
+        cout<< setw(15) << left << ' ';             Cell("k (m/N)");        Cell("sigma (m/N)");        cout<<endl;
+        cout<< setw(15) << left << "Mean lines";    Cell(k_line_final);     Cell(k_line_final_sigma);   cout<<endl;
+        cout<< setw(15) << left << "Mean finals";   Cell(k_final_final);    Cell(k_final_final_sigma);  cout<<endl;
     PrintEoF();
 }
 
