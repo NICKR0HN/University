@@ -40,8 +40,8 @@ struct sample_struct{
     double force_sigma, length_sigma;
     double k_line, q_line, k_line_sig, q_line_sig;
     double corr_coeff, sigma_post, k_line_sig_p, q_line_sig_p;
-    array<double,2> k_mean;
-    array<double,2> k_mean_sigma;
+    array<double,2> k_mean, k_mean_sigma;
+    array<int,2> times_k;
     double comp_a_0, comp_a_1, comp_0_1;
 
     // costruttore
@@ -54,11 +54,8 @@ struct sample_struct{
         }
         Interpol();
         CoeffCorr();
-        for (int i = 0; i < 2; i++){
-            array<double,2> out = KVector(i);
-            k_mean[i] = out[0];
-            k_mean_sigma [i] = out[1];
-        }
+        for (int i = 0; i < 2; i++)
+            KVector(i);
         comp_a_0 = Compatibility(k_line, k_mean[0], k_line_sig_p, k_mean_sigma[0]);
         comp_a_1 = Compatibility(k_line, k_mean[1], k_line_sig_p, k_mean_sigma[1]);
         comp_0_1 = Compatibility(k_mean[0], k_mean[1], k_mean_sigma[0], k_mean_sigma[1]);
@@ -121,23 +118,24 @@ struct sample_struct{
         corr_coeff = (xys_mean - xs_mean * ys_mean) / (var_x * var_y);
     }
     
-    array<double,2> KVector(int odd){
-        array<double,2> out;
+    void KVector(int odd){
         double df, df_sigma, dx, dx_sigma, k, k_sigma;
+        int count = 0;
         vector<double> k_vector, k_sigma_vector;
         dx_sigma = length_sigma * sqrt(2.0);
         df_sigma = force_sigma * sqrt(2.0);
-        for (int i = odd; i < (data_size - 1); i++){
+        for (int i = odd; i < (data_size - 1); i = i + 2){
             dx = lengths[i + 1] - lengths[i];
             df = d_forces[i + 1] - d_forces[i];
             k = dx / df;
             k_vector.push_back(k);
             k_sigma = abs(k) * sqrt(pow((dx_sigma / dx), 2.0) + pow((df_sigma / df), 2.0));
             k_sigma_vector.push_back(k_sigma);
+            count++;
         }
-        out[0] = WeightedMean(k_vector, k_sigma_vector);
-        out[1] = MeanSigma(k_sigma_vector);
-        return out;
+        k_mean[odd] = Mean(k_vector);
+        k_mean_sigma[odd] = MeanSigma(k_sigma_vector);
+        times_k[odd] = count;
     }
 
     void PrintData(){
@@ -151,8 +149,8 @@ struct sample_struct{
         cout<< setw(13) << left << "Data size = "   << data_size;   Cell("k (m/N)");    Cell("sigma (m/N)");    Cell("q (m)");  Cell("sigma (m)");  cout<<endl;
         cout<< setw(15) << left << "Interpol.";                     Cell(k_line);       Cell(k_line_sig);       Cell(q_line);   Cell(q_line_sig);   cout<<endl;
         cout<< setw(15) << left << "Post. sigma";                   Cell(k_line);       Cell(k_line_sig_p);     Cell(q_line);   Cell(q_line_sig_p); cout<<endl;
-        cout<< setw(15) << left << "Mean k1";                       Cell(k_mean[0]);     Cell(k_mean_sigma[0]);   cout<<endl;
-        cout<< setw(15) << left << "Mean k2";                       Cell(k_mean[1]);     Cell(k_mean_sigma[1]);   cout<<endl<<endl;
+        cout<< setw(15) << left << "Mean k1";                       Cell(k_mean[0]);     Cell(k_mean_sigma[0]); Cell(times_k[0]);                   cout<<endl;
+        cout<< setw(15) << left << "Mean k2";                       Cell(k_mean[1]);     Cell(k_mean_sigma[1]); Cell(times_k[1]);                   cout<<endl<<endl;
         cout<< setw(15) << left << "Post. sigma";                   Cell(sigma_post);   cout<<endl;
         cout<< setprecision(6);
         cout<< setw(15) << left << "Corr. coeff.";                  Cell(corr_coeff);   cout<<endl;
