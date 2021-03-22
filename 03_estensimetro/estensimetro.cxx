@@ -85,6 +85,8 @@ struct sample_struct{
             data_size++;
         }
         input_file.close();
+        sort(forces.begin(), forces.end());
+        sort(lengths.begin(), lengths.end());
     }
     
     void Interpol(){
