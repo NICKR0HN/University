@@ -12,7 +12,6 @@ using namespace std;
 
 // variabili globali
 const string idir = "./data";
-const string odir = "./output";
 const double f_factor = 4.0 * 9.806 * 0.001;
 const double l_factor = 0.000001;
 
