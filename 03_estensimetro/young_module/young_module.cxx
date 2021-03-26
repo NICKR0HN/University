@@ -67,17 +67,21 @@ struct est_struct{
 
 vector<string> GetFiles(string);
 vector<est_struct> ReadFile(string);
-void DataAnalysis(vector<est_struct>);
+array<double,2> DataAnalysis(vector<est_struct>);
     double CorrCheck(vector<est_struct>);
     array<double,2> MeanYoung(vector<est_struct>);
+void Summary(vector<double>, vector<double>);
 
 int main(){
     vector<string> filenames = GetFiles(idir);        // lettura delle cartelle con i dati
+    vector<double> youngs, youngs_sig; 
     for (string filename : filenames){
         vector<est_struct> estens = ReadFile(filename);
-        DataAnalysis(estens);
-        
+        array<double,2> out = DataAnalysis(estens);
+        youngs.push_back(out[0]);
+        youngs_sig.push_back(out[1]);        
     }
+    Summary(youngs, youngs_sig);
     return 0;
 }
 
@@ -116,7 +120,6 @@ vector<est_struct> ReadFile(string filename){
             exit(1);
         }
         string line;
-        getline(input_file, line);
         while(getline(input_file, line)){
             est_struct est = est_struct(line);
             data.push_back(est);
@@ -125,11 +128,19 @@ vector<est_struct> ReadFile(string filename){
         return data;
     }
 
-void DataAnalysis(vector<est_struct> estens){
+array<double,2> DataAnalysis(vector<est_struct> estens){
     double corr = CorrCheck(estens);
     cout<< corr <<endl;
     array<double,2> mean_young = MeanYoung(estens);
     cout<< "Mean young modulus: " << mean_young[0] << "\t+-" << mean_young[1] <<endl;
+    PrintEoF();
+    return mean_young;
+}
+
+void Summary(vector<double> youngs, vector<double> youngs_sig){
+    double young_f = WeightedMean(youngs, youngs_sig);
+    double young_f_sig = MeanSigma(youngs_sig);
+    cout<< "Final young modulus: " << young_f << "\t+- " << young_f_sig <<endl;
     PrintEoF();
 }
 
@@ -152,7 +163,7 @@ double CorrCheck(vector<est_struct> estens){
     else {
         cout<< "Error: no match was found"<<endl;
         PrintEoF();
-        return (1 / 0);
+        return nan("");
     }
     double corr = CoeffCorr(ks, ys);
     return corr;
