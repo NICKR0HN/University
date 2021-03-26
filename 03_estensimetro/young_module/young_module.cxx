@@ -36,7 +36,7 @@ struct est_struct{
     double young, young_sig;
     est_struct(string line){
         ReadData(line);
-        YoungModule();
+        YoungModulus();
         PrintData();
     }
     void ReadData(string line){
@@ -51,7 +51,7 @@ struct est_struct{
         k = WeightedMean(ks, ks_sig);
         k_sig = MeanSigma(ks_sig);
     }
-    void YoungModule(){
+    void YoungModulus(){
         young = (4.0 * length) / (M_PI * k * diam * diam);
         double a = (length_sig) / (k * diam * diam);
         double b = (length * k_sig) / (k * k * diam * diam);
@@ -107,7 +107,7 @@ vector<string> GetFiles(string wdir){
 
 vector<est_struct> ReadFile(string filename){
         cout<< filename <<endl<<endl;
-        Cell("k"); Cell("k.sigma"); Cell("Y.module"); Cell("Y.mod.sig."); Cell("Length"); Cell("Diam.");
+        Cell("k"); Cell("k.sigma"); Cell("Y.modulus"); Cell("Y.mod.sig."); Cell("Length"); Cell("Diam.");
         cout<<endl;
         vector<est_struct> data;
         ifstream input_file(filename);
@@ -129,7 +129,7 @@ void DataAnalysis(vector<est_struct> estens){
     double corr = CorrCheck(estens);
     cout<< corr <<endl;
     array<double,2> mean_young = MeanYoung(estens);
-    cout<< "Mean young module: " << mean_young[0] << "\t+-" << mean_young[1] <<endl;
+    cout<< "Mean young modulus: " << mean_young[0] << "\t+-" << mean_young[1] <<endl;
     PrintEoF();
 }
 
