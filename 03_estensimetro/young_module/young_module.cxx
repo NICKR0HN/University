@@ -145,7 +145,7 @@ void Summary(vector<double> youngs, vector<double> youngs_sig){
 }
 
 double CorrCheck(vector<est_struct> estens){
-    vector<double> ks, ys;
+    vector<double> ks {0.0}, ys {0.0};
     if (estens[0].diam == estens[1].diam){
         cout<< "Constant diameter: ";
         for (est_struct est : estens){
