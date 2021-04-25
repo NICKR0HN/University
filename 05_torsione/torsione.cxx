@@ -19,7 +19,7 @@ template <typename T> void Cell(T text){
     cout<< setw(15) << right << text;
 }
 void PrintEoF(char sep){
-    cout<<endl << string(45, sep) <<endl <<endl;
+    cout<<endl << string(60, sep) <<endl <<endl;
 }
 
 // prototipi funzioni matematiche
@@ -31,51 +31,69 @@ double CoeffCorr(vector<double>, vector<double>);
 // struttura set di data
 struct sample_struct {
     double freq;
-    vector<double> thetas;
-    double limit;
-    vector<double> periods;
-    sample_struct(string line){
-        istringstream input_line(line);
-        input_line >> freq;
-        double theta;
-        while (input_line >> theta)
-            thetas.push_back(theta * 2.0 * M_PI);
+    vector<double> forces, angles;
+    vector<double> f_periods, a_periods;
+    sample_struct(string forces_in, string angles_in){
+        istringstream forces_line(forces_in), angles_line(angles_in);
+        forces_line >> freq;
         cout<< "Frequency = " << freq << "Hz" <<endl<<endl;
-        GetLimit();
-        Periods();
+        double temp;
+        angles_line >> temp;
+        if(freq != temp){
+            cout << "Missing line" <<endl;
+            exit(1);
+        }
+        double force, angle;
+        while ((forces_line >> force) && (angles_line >> angle)){
+            if ((force == 0) && (!forces.empty()) && (forces.back() == 0)){
+                cout<< "Motor stopped" <<endl;
+                break;
+            }
+            forces.push_back(force * 2.0 * M_PI);
+            angles.push_back(angle * 2.0 * M_PI);
+        }
+        f_periods = Periods(forces);
+        a_periods = Periods(angles);
         PrintEoF('#');
     }
 
-    void GetLimit(){
+    double GetLimit(vector<double> data){
         vector<double> squared;
-        for(double c : thetas)
+        for(double c : data)
             squared.push_back(c * c);
         double mean = Mean(squared);
-        limit = sqrt(mean) / 2.0;
+        double limit = sqrt(mean) / 2.0;
+        return limit;
     }
 
-    void Periods(){
-        cout<< "Periods" <<endl; Cell("Time"); Cell("Corr."); Cell("Length"); Cell("Position"); cout<<endl;
+    vector<double> Periods(vector<double> data){
+        double limit = GetLimit(data);
+        vector<double> times, periods;
+        cout<< "Periods" <<endl; Cell("Period"); Cell("Corr."); Cell("Length"); Cell("Position"); cout<<endl;
         int i = 0;
-        while(i < thetas.size()){
+        while(i < data.size()){
             vector<double> ys, xs;
-            while(abs(thetas[i]) < limit){
-                ys.push_back(thetas[i]);
+            while((i < data.size()) && (abs(data[i]) < limit)){
+                ys.push_back(data[i]);
                 xs.push_back(i * dt);
                 i++;
             }
             i++;
             if (ys.size() > 1){
-                double prev = 0.0;
-                if (!periods.empty())
-                    prev = periods.back();
-                double time = Interpol(xs, ys) - prev;
-                periods.push_back(time);
+                double time = Interpol(xs, ys);
+                double period = 0.0;
+                if (!times.empty()){
+                    period = time - times.back();
+                    periods.push_back(period);
+                }
+                times.push_back(time);
                 double corr = CoeffCorr(xs, ys);
                 int length = ys.size();
-                Cell(time); Cell(corr); Cell(length); Cell(i); cout<<endl;
+                Cell(period); Cell(corr); Cell(length); Cell(i); cout<<endl;
             }
         }
+        PrintEoF('-');
+        return periods;
     }
 
     double Interpol(vector<double> xs, vector<double> ys){
@@ -120,9 +138,9 @@ vector<sample_struct> ReadFile(){
         cout<< "Error opening the file" <<endl;
         exit(1);
     }
-    string line;
-    while(getline(input_file, line)){
-        sample_struct sample = sample_struct(line);
+    string forces, angles;
+    while(getline(input_file, forces) && getline(input_file, angles)){
+        sample_struct sample = sample_struct(forces, angles);
         samples.push_back(sample);
     }
     return samples;
@@ -131,7 +149,7 @@ vector<sample_struct> ReadFile(){
 // funzioni matematiche
 double Mean(vector<double> data){
     double sum = 0.0;
-    for (auto c : data)
+    for (double c : data)
         sum += c;
     double mean = sum / data.size();
     return mean;
@@ -140,7 +158,7 @@ double Mean(vector<double> data){
 double Summation(vector<double> data){
     double summation = 0.0;
     double m = Mean(data);
-    for (auto c : data)
+    for (double c : data)
         summation += pow((c - m), 2.0);
     return summation;
 }
