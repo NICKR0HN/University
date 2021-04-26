@@ -34,6 +34,15 @@ struct sample_struct {
     vector<double> forces, angles;
     vector<double> f_periods, a_periods;
     sample_struct(string forces_in, string angles_in){
+        ReadData(forces_in, angles_in);
+        cout<< "Forcing" <<endl;
+        f_periods = Periods(forces);
+        cout<< "Pendulum" <<endl;
+        a_periods = Periods(angles);
+        PrintEoF('#');
+    }
+
+    void ReadData(string forces_in, string angles_in){
         istringstream forces_line(forces_in), angles_line(angles_in);
         forces_line >> freq;
         cout<< "Frequency = " << freq << "Hz" <<endl<<endl;
@@ -52,9 +61,6 @@ struct sample_struct {
             forces.push_back(force * 2.0 * M_PI);
             angles.push_back(angle * 2.0 * M_PI);
         }
-        f_periods = Periods(forces);
-        a_periods = Periods(angles);
-        PrintEoF('#');
     }
 
     double GetLimit(vector<double> data){
@@ -62,14 +68,14 @@ struct sample_struct {
         for(double c : data)
             squared.push_back(c * c);
         double mean = Mean(squared);
-        double limit = sqrt(mean) / 2.0;
+        double limit = sqrt(mean) / 1.5;
         return limit;
     }
 
     vector<double> Periods(vector<double> data){
         double limit = GetLimit(data);
         vector<double> times, periods;
-        cout<< "Periods" <<endl; Cell("Period"); Cell("Corr."); Cell("Length"); Cell("Position"); cout<<endl;
+        // Cell("Period"); Cell("Corr."); Cell("Length"); Cell("Position"); cout<<endl;
         int i = 0;
         while(i < data.size()){
             vector<double> ys, xs;
@@ -78,7 +84,6 @@ struct sample_struct {
                 xs.push_back(i * dt);
                 i++;
             }
-            i++;
             if (ys.size() > 1){
                 double time = Interpol(xs, ys);
                 double period = 0.0;
@@ -89,9 +94,12 @@ struct sample_struct {
                 times.push_back(time);
                 double corr = CoeffCorr(xs, ys);
                 int length = ys.size();
-                Cell(period); Cell(corr); Cell(length); Cell(i); cout<<endl;
+                // Cell(period); Cell(corr); Cell(length); Cell(i); cout<<endl;
             }
+            i++;
         }
+        cout<< "Intersections found: " << periods.size() <<endl;
+        
         PrintEoF('-');
         return periods;
     }
@@ -108,14 +116,6 @@ struct sample_struct {
         double delta = (data_size * xtwo) - (xone * xone);
         double coeff = ((data_size * xy) - (xone * yone)) / delta;
         double rcept = ((xtwo * yone) - (xone * xy)) / delta;
-        /*k_line_sig = length_sigma * sqrt(data_size / delta);
-        q_line_sig = length_sigma * sqrt(xtwo / delta);
-        double num = 0.0;
-        for (int i = 0; i < data_size; i++)
-            num += pow ((lengths[i] - (k_line * d_forces[i]) - q_line), 2.0);
-        sigma_post = sqrt(num / (data_size - 2.0));
-        k_line_sig_p = sigma_post * sqrt(data_size / delta);
-        q_line_sig_p = sigma_post * sqrt(xtwo / delta); */
         double interpol = -1.0 * rcept / coeff;
         return interpol;
     }
