@@ -12,6 +12,7 @@ using namespace std;
 
 // variabili globali
 const string ifile = "./data/period.txt";
+const string ofile = "./data/results.txt";
 const double dt = 0.02;
 
 // stampa su console
@@ -27,19 +28,26 @@ double Mean(vector<double>);
 double Summation(vector<double>);
 double GetStdDev(vector<double>, int);
 double CoeffCorr(vector<double>, vector<double>);
+vector<double> ThreeSigma(vector<double>);
 
 // struttura set di data
 struct sample_struct {
-    double freq;
+    double freq, real_p;
     vector<double> forces, angles;
     vector<double> f_periods, a_periods;
+    array<double, 2> f_avg_p, a_avg_p;
     sample_struct(string forces_in, string angles_in){
         ReadData(forces_in, angles_in);
+        real_p = 1.0 / freq;
         cout<< "Forcing" <<endl;
         f_periods = Periods(forces);
+        f_avg_p = AvgPeriod(f_periods);
+        PrintEoF('-');
         cout<< "Pendulum" <<endl;
         a_periods = Periods(angles);
+        a_avg_p = AvgPeriod(a_periods);
         PrintEoF('#');
+        WriteFile();
     }
 
     void ReadData(string forces_in, string angles_in){
@@ -72,10 +80,10 @@ struct sample_struct {
         return limit;
     }
 
-    vector<double> Periods(vector<double> data){
+    vector<double> GetIntervals(vector<double> data){
         double limit = GetLimit(data);
-        vector<double> times, periods;
-        // Cell("Period"); Cell("Corr."); Cell("Length"); Cell("Position"); cout<<endl;
+        vector<double> times, intervals;
+        // Cell("Interval"); Cell("Corr."); Cell("Length"); Cell("Position"); cout<<endl;
         int i = 0;
         while(i < data.size()){
             vector<double> ys, xs;
@@ -86,22 +94,40 @@ struct sample_struct {
             }
             if (ys.size() > 1){
                 double time = Interpol(xs, ys);
-                double period = 0.0;
+                double interval = 0.0;
                 if (!times.empty()){
-                    period = time - times.back();
-                    periods.push_back(period);
+                    interval = time - times.back();
+                    intervals.push_back(interval);
                 }
                 times.push_back(time);
                 double corr = CoeffCorr(xs, ys);
                 int length = ys.size();
-                // Cell(period); Cell(corr); Cell(length); Cell(i); cout<<endl;
+                // Cell(interval); Cell(corr); Cell(length); Cell(i); cout<<endl;
             }
             i++;
         }
-        cout<< "Intersections found: " << periods.size() <<endl;
-        
-        PrintEoF('-');
+        cout<< "Intersections found: " << intervals.size() <<endl;
+        return intervals;
+    }
+
+    vector<double> Periods(vector<double> data){
+        vector<double> intervals = GetIntervals(data);
+        vector<double> periods;
+        for (int i = 0; i < intervals.size(); i = i+2)
+            periods.push_back(intervals[i]);
+        periods = ThreeSigma(periods);
+        cout<< "Refined: " << periods.size() <<endl;
         return periods;
+    }
+
+    array<double, 2> AvgPeriod(vector<double> periods){
+        double avg_p = 2.0 * Mean(periods);
+        double std_dev = 2.0 * GetStdDev(periods, (periods.size() - 1));
+        cout<< "Exp. period = \t"   << real_p   <<endl;
+        cout<< "Avg. period = \t"   << avg_p    <<endl;
+        cout<< "Std. deviation=\t"  << std_dev  <<endl;
+        array<double, 2> out = {avg_p, std_dev};
+        return out;
     }
 
     double Interpol(vector<double> xs, vector<double> ys){
@@ -119,14 +145,27 @@ struct sample_struct {
         double interpol = -1.0 * rcept / coeff;
         return interpol;
     }
+
+    void WriteFile(){
+        ofstream output(ofile, ofstream::app);
+        if (!output.is_open())
+            exit(1);
+        output<< freq <<'\t' << f_avg_p[0] <<'\t' << f_avg_p[1] <<'\t' << a_avg_p[0] <<'\t' << a_avg_p[1] <<endl;
+        output.close();
+    }
 };
 
 // prototipi funzioni main
 vector<sample_struct> ReadFile();
 
 int main(){
+    ofstream overwrite(ofile, ofstream::trunc);
+    if (!overwrite.is_open()){
+        cout<< "Permission denied" <<endl;
+        exit(1);
+    }
+    overwrite.close();
     vector<sample_struct> samples = ReadFile();
-    
     return 0;
 }
 
@@ -180,4 +219,20 @@ double CoeffCorr(vector<double> xs, vector<double> ys){
     double var_y = GetStdDev(ys, data_len);
     double corr_coeff = (xys_mean - xs_mean * ys_mean) / (var_x * var_y);
     return corr_coeff;
+}
+
+vector<double> ThreeSigma(vector<double> data){
+    vector<double> new_data;
+    while (new_data.size() < data.size()){
+        if (!new_data.empty()){
+            data = new_data;
+            new_data.clear();
+        }
+        double three_sigma = 3.0 * GetStdDev(data, (data.size() - 1));
+        double mean = Mean(data);
+        for (double c : data)
+            if(((mean - three_sigma) < c) && (c < (mean + three_sigma)))
+                new_data.push_back(c);
+    }
+    return new_data;
 }
