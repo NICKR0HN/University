@@ -20,70 +20,50 @@ template <typename T> void Cell(T text){
     cout<< setw(15) << right << text;
 }
 void PrintEoF(char sep){
-    cout<<endl << string(60, sep) <<endl <<endl;
+    cout<<endl << string(75, sep) <<endl <<endl;
 }
 
 // prototipi funzioni matematiche
+double Min(vector<double>);
+double Max(vector<double>);
 double Mean(vector<double>);
 double Summation(vector<double>);
 double GetStdDev(vector<double>, int);
 double CoeffCorr(vector<double>, vector<double>);
-vector<double> ThreeSigma(vector<double>);
+void ThreeSigma(vector<double>&);
+void DelFirstLast(vector<double>&);
 
-// struttura set di data
-struct sample_struct {
-    double freq, real_p;
-    vector<double> forces, angles;
-    vector<double> f_periods, a_periods;
-    array<double, 2> f_avg_p, a_avg_p;
-    sample_struct(string forces_in, string angles_in){
-        ReadData(forces_in, angles_in);
-        real_p = 1.0 / freq;
-        cout<< "Forcing" <<endl;
-        f_periods = Periods(forces);
-        f_avg_p = AvgPeriod(f_periods);
-        PrintEoF('-');
-        cout<< "Pendulum" <<endl;
-        a_periods = Periods(angles);
-        a_avg_p = AvgPeriod(a_periods);
-        PrintEoF('#');
-        WriteFile();
+// struttura dei dati di una singola sinusoide
+struct dataset_struct {
+    double real_p, limit;
+    vector<double> data;
+    vector<double> times, periods, correlations, counter_p;
+    double avg_p, stddev_p, sigma_p;
+    vector<double> tops, lows, counter_m;
+    double top, stddev_top, sigma_top;
+    double low, stddev_low, sigma_low;
+    dataset_struct(){};
+    dataset_struct(double period_in, vector<double> data_in){
+        real_p = period_in;
+        data = data_in;
+        GetLimit();
+        GetIntersections();
+        GetPeriods();
+        GetMaxes();
+        GetAmplitude();
+        PrintData();
     }
 
-    void ReadData(string forces_in, string angles_in){
-        istringstream forces_line(forces_in), angles_line(angles_in);
-        forces_line >> freq;
-        cout<< "Frequency = " << freq << "Hz" <<endl<<endl;
-        double temp;
-        angles_line >> temp;
-        if(freq != temp){
-            cout << "Missing line" <<endl;
-            exit(1);
-        }
-        double force, angle;
-        while ((forces_line >> force) && (angles_line >> angle)){
-            if ((force == 0) && (!forces.empty()) && (forces.back() == 0)){
-                cout<< "Motor stopped" <<endl;
-                break;
-            }
-            forces.push_back(force * 2.0 * M_PI);
-            angles.push_back(angle * 2.0 * M_PI);
-        }
-    }
-
-    double GetLimit(vector<double> data){
+    void GetLimit(){
         vector<double> squared;
         for(double c : data)
             squared.push_back(c * c);
         double mean = Mean(squared);
-        double limit = sqrt(mean) / 1.5;
-        return limit;
+        limit = sqrt(mean) / 1.5;
     }
 
-    vector<double> GetIntervals(vector<double> data){
-        double limit = GetLimit(data);
-        vector<double> times, intervals;
-        // Cell("Interval"); Cell("Corr."); Cell("Length"); Cell("Position"); cout<<endl;
+    // intersezioni con l'asse x
+    void GetIntersections(){
         int i = 0;
         while(i < data.size()){
             vector<double> ys, xs;
@@ -94,40 +74,80 @@ struct sample_struct {
             }
             if (ys.size() > 1){
                 double time = Interpol(xs, ys);
-                double interval = 0.0;
-                if (!times.empty()){
-                    interval = time - times.back();
-                    intervals.push_back(interval);
-                }
                 times.push_back(time);
                 double corr = CoeffCorr(xs, ys);
-                int length = ys.size();
-                // Cell(interval); Cell(corr); Cell(length); Cell(i); cout<<endl;
+                correlations.push_back(abs(corr));
+                int count = ys.size();
+                counter_p.push_back(count);
             }
             i++;
         }
-        cout<< "Intersections found: " << intervals.size() <<endl;
-        return intervals;
+        DelFirstLast(times);
+        DelFirstLast(correlations);
+        DelFirstLast(counter_p);
     }
 
-    vector<double> Periods(vector<double> data){
-        vector<double> intervals = GetIntervals(data);
-        vector<double> periods;
-        for (int i = 0; i < intervals.size(); i = i+2)
-            periods.push_back(intervals[i]);
-        periods = ThreeSigma(periods);
-        cout<< "Refined: " << periods.size() <<endl;
-        return periods;
+    void GetPeriods(){
+        for (int i = 1; i < times.size(); i = i+2)
+            periods.push_back(times[i] - times[i-1]);
+        ThreeSigma(periods);
+        avg_p = 2.0 * Mean(periods);
+        stddev_p = 2.0 * GetStdDev(periods, (periods.size() - 1));
+        sigma_p = stddev_p / sqrt(periods.size());
     }
 
-    array<double, 2> AvgPeriod(vector<double> periods){
-        double avg_p = 2.0 * Mean(periods);
-        double std_dev = 2.0 * GetStdDev(periods, (periods.size() - 1));
-        cout<< "Exp. period = \t"   << real_p   <<endl;
-        cout<< "Avg. period = \t"   << avg_p    <<endl;
-        cout<< "Std. deviation=\t"  << std_dev  <<endl;
-        array<double, 2> out = {avg_p, std_dev};
-        return out;
+    // massimi e minimi
+    void GetMaxes(){
+        int i = 1;
+        while(i < data.size()){
+            vector<double> xs, ys;
+            while((i < data.size()) && ((data[i-1] * data[i]) > 0)){
+                if(abs(data[i]) > limit){
+                    xs.push_back(i * dt);
+                    ys.push_back(data[i]);
+                }
+                i++;
+            }
+            if(ys.size() >= 3){
+                double max = Parabola(xs, ys);
+                int count = ys.size();
+                if(max > 0)
+                    tops.push_back(max);
+                else lows.push_back(max);
+                counter_m.push_back(count);
+            }
+            i++;
+        }
+        DelFirstLast(tops);
+        DelFirstLast(lows);
+        DelFirstLast(counter_m);
+    }
+
+    void GetAmplitude(){
+        ThreeSigma(tops);
+        ThreeSigma(lows);
+        top = Mean(tops);
+        low = Mean(lows);
+        stddev_top = GetStdDev(tops, tops.size() - 1);
+        stddev_low = GetStdDev(lows, lows.size() - 1);
+        sigma_top = stddev_top / sqrt(tops.size());
+        sigma_low = stddev_low / sqrt(lows.size());
+    }
+
+    void PrintData(){
+        cout<< "Expected period = " << real_p <<endl;
+        cout<< "Limit = " << limit <<endl;
+        cout<< "Intersections = " << times.size() <<endl;
+        cout<< "Periods = " << periods.size() <<endl;
+        cout<< "Tops = " << tops.size() <<endl;
+        cout<< "Lows = " << lows.size() <<endl;
+        Cell(' '); Cell("Average"); Cell("Minimum"); Cell("Maximum"); Cell("Std. dev."); cout<<endl;
+        cout<< setw(15) << left << "Period"; Cell(avg_p); Cell(2.0 * Min(periods)); Cell(2.0 * Max(periods)); Cell(stddev_p); cout<<endl;
+        cout<< setw(15) << left << "Correlation"; Cell(Mean(correlations)); Cell(Min(correlations)); Cell(Max(correlations)); cout<<endl;
+        cout<< setw(15) << left << "Number points"; Cell(Mean(counter_p)); Cell(Min(counter_p)); Cell(Max(counter_p)); cout<<endl;
+        cout<< setw(15) << left << "Top amplitude"; Cell(top); Cell(Min(tops)); Cell(Max(tops)); Cell(stddev_top); cout<<endl;
+        cout<< setw(15) << left << "Low amplitude"; Cell(low); Cell(Max(lows)); Cell(Min(lows)); Cell(stddev_low); cout<<endl;
+        cout<< setw(15) << left << "Number points"; Cell(Mean(counter_m)); Cell(Min(counter_m)); Cell(Max(counter_m)); cout<<endl;
     }
 
     double Interpol(vector<double> xs, vector<double> ys){
@@ -146,12 +166,71 @@ struct sample_struct {
         return interpol;
     }
 
-    void WriteFile(){
-        ofstream output(ofile, ofstream::app);
-        if (!output.is_open())
+    // interpolazione parabolica
+    double Parabola(vector<double> xs, vector<double> ys){
+        double x1 = 0.0, x2 = 0.0, x3 = 0.0, x4 = 0.0, y1 = 0.0, x1y1 = 0.0, x2y1 = 0.0;
+        int n = xs.size();
+        for(int i = 0; i < n; i++){
+            x1 += xs[i];
+            x2 += pow(xs[i], 2.0);          //  [x4] [x3] [x2] | [x2y1]
+            x3 += pow(xs[i], 3.0);          //  [x3] [x2] [x1] | [x1y1]
+            x4 += pow(xs[i], 2.0);          //  [x2] [x1] [n]  |  [y1]
+            y1 += ys[i];
+            x1y1 += xs[i] * ys[i];
+            x2y1 += pow(xs[i], 2.0) * ys[1];
+        }
+        // determinante delle sottomatrici
+        double lt = (n * x2) - (x1 * x1);   //  [lt] [mt] [rt]
+        double lm = (n * x3) - (x1 * x2);   //  [lm] [mm] [rm]
+        double lb = (x1 * x3) - (x2 * x2);  //  [lb] [mb] [rb]
+        double mt = lm;
+        double mm = (n * x4) - (x2 * x2);
+        double mb = (x1 * x4) - (x2 * x3);
+        double rt = lb;
+        double rm = mb;
+        double rb = (x2 * x4) - (x3 * x3);
+        // metodo di Cramer
+        double delta = (x4 * lt) - (x3 * lm) + (x2 * lb);
+        // sviluppo di LaPlace sulle colonne della variabile corrispondente
+        double a = ((x2y1 * lt) - (x1y1 * lm) + (y1 * lb)) / delta;
+        double b = (- (x2y1 * mt) + (x1y1 * mm) - (y1 * mb)) / delta;
+        double c = ((x2y1 * rt) - (x1y1 * rm) + (y1 * rb)) / delta;
+        return (c - ((b * b) / (4.0 * a))); 
+    }
+};
+
+// struttura per ciascuna frequenza
+struct sample_struct {
+    double freq;
+    dataset_struct forces, angles;
+    sample_struct(string forces_in, string angles_in){
+        istringstream forces_line(forces_in), angles_line(angles_in);
+        forces_line >> freq;
+        cout<< "FREQUENCY = " << freq << "Hz" <<endl;
+        PrintEoF('-');
+        double temp;
+        angles_line >> temp;
+        if(freq != temp){
+            cout << "Missing line" <<endl;
             exit(1);
-        output<< freq <<'\t' << f_avg_p[0] <<'\t' << f_avg_p[1] <<'\t' << a_avg_p[0] <<'\t' << a_avg_p[1] <<endl;
-        output.close();
+        }
+        double real_p = 1.0 / freq;
+        double force, angle;
+        vector<double> forces_data, angles_data;
+        while ((forces_line >> force) && (angles_line >> angle)){
+            if ((force == 0) && (!forces_data.empty()) && (forces_data.back() == 0)){
+                cout<< "Motor stopped" <<endl;
+                break;
+            }
+            forces_data.push_back(force * 2.0 * M_PI);
+            angles_data.push_back(angle * 2.0 * M_PI);
+        }
+        cout<< "FORCING" <<endl<<endl;
+        forces = dataset_struct(real_p, forces_data);
+        PrintEoF('/');
+        cout<< "PENDULUM" <<endl<<endl;
+        angles = dataset_struct(real_p, angles_data);
+        PrintEoF('#');
     }
 };
 
@@ -186,6 +265,22 @@ vector<sample_struct> ReadFile(){
 }
 
 // funzioni matematiche
+double Min(vector<double> data){
+    double min = data[0];
+        for (auto c : data)
+            if (c < min)
+                min = c;
+        return min;
+};
+
+double Max(vector<double> data){
+    double max = data[0];
+        for (double c : data)
+            if (c > max)
+                max = c;
+        return max;
+};
+
 double Mean(vector<double> data){
     double sum = 0.0;
     for (double c : data)
@@ -221,18 +316,21 @@ double CoeffCorr(vector<double> xs, vector<double> ys){
     return corr_coeff;
 }
 
-vector<double> ThreeSigma(vector<double> data){
-    vector<double> new_data;
-    while (new_data.size() < data.size()){
-        if (!new_data.empty()){
-            data = new_data;
-            new_data.clear();
-        }
-        double three_sigma = 3.0 * GetStdDev(data, (data.size() - 1));
-        double mean = Mean(data);
-        for (double c : data)
+void ThreeSigma(vector<double> &data){
+    vector<double> old_data, new_data(data);
+    do {
+        old_data = new_data;
+        new_data.clear();
+        double three_sigma = 3.0 * GetStdDev(old_data, (old_data.size() - 1));
+        double mean = Mean(old_data);
+        for (double c : old_data)
             if(((mean - three_sigma) < c) && (c < (mean + three_sigma)))
                 new_data.push_back(c);
-    }
-    return new_data;
+    } while (new_data.size() < old_data.size());
+    data = new_data;
+}
+
+void DelFirstLast(vector<double> &data){
+    data.erase(data.begin());
+    data.pop_back();
 }
