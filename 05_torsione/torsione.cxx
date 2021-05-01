@@ -32,22 +32,22 @@ double MeanSigma(vector<double>);
 double Summation(vector<double>);
 double GetStdDev(vector<double>, int);
 double CoeffCorr(vector<double>, vector<double>);
-void ThreeSigma(vector<double>&);
+void ThreeSigma(vector<double>&, vector<double>&);
 void DelFirstLast(vector<double>&);
 
 // struttura dei dati di una singola sinusoide
 struct dataset_struct {
-    double real_per, limit;
+    double per_real, limit;
     vector<double> data;
-    vector<double> times, periods, correlations, counter_per;
-    double avg_per, stddev_per, sigma_per, puls, sigma_puls;
-    vector<double> tops, lows, counter_m;
-    double top, stddev_top, sigma_top;
-    double low, stddev_low, sigma_low;
-    double amp, sigma_amp;
+    vector<double> times, times_s, periods, per_sigmas, correlations, per_counter;
+    double per_avg, per_stddev, per_sigma, puls, puls_sigma;
+    vector<double> tops, tops_s, lows, lows_s, max_counter;
+    double top, top_stddev, top_sigma;
+    double low, low_stddev, low_sigma;
+    double amp, amp_sigma;
     dataset_struct(){};
     dataset_struct(double period_in, vector<double> data_in){
-        real_per = period_in;
+        per_real = period_in;
         data = data_in;
         GetLimit();
         GetIntersections();
@@ -76,29 +76,36 @@ struct dataset_struct {
                 i++;
             }
             if (ys.size() > 1){
-                double time = Interpol(xs, ys);
+                array<double, 2> line = Interpol(xs, ys);
+                double time = line[0];
                 times.push_back(time);
+                double sigma = line[1];
+                times_s.push_back(sigma);
                 double corr = CoeffCorr(xs, ys);
                 correlations.push_back(abs(corr));
                 int count = ys.size();
-                counter_per.push_back(count);
+                per_counter.push_back(count);
             }
             i++;
         }
         DelFirstLast(times);
         DelFirstLast(correlations);
-        DelFirstLast(counter_per);
+        DelFirstLast(per_counter);
+        DelFirstLast(times_s);
     }
 
     void GetPeriods(){
-        for (int i = 1; i < times.size(); i = i+2)
+        for (int i = 1; i < times.size(); i = i+2){
             periods.push_back(times[i] - times[i-1]);
-        ThreeSigma(periods);
-        avg_per = 2.0 * Mean(periods);
-        stddev_per = 2.0 * GetStdDev(periods, (periods.size() - 1));
-        sigma_per = stddev_per / sqrt(periods.size());
-        puls = 2.0 * M_PI / avg_per;
-        sigma_puls = 2.0 * M_PI * sigma_per / pow(puls, 2.0);
+            double sigma = sqrt(pow(times_s[i], 2.0) + pow(times_s[i-1], 2.0));
+            per_sigmas.push_back(sigma);
+        }
+        ThreeSigma(periods, per_sigmas);
+        per_avg = 2.0 * WeightedMean(periods, per_sigmas);
+        per_stddev = 2.0 * GetStdDev(periods, (periods.size() - 1));
+        per_sigma = 2.0 * MeanSigma(per_sigmas);
+        puls = 2.0 * M_PI / per_avg;
+        puls_sigma = 2.0 * M_PI * per_sigma / pow(puls, 2.0);
     }
 
     // massimi e minimi
@@ -113,52 +120,61 @@ struct dataset_struct {
                 }
                 i++;
             }
-            if(ys.size() >= 3){
-                double max = Parabola(xs, ys);
+            if(ys.size() > 3){
+                array<double, 2> parabola = Parabola(xs, ys);
+                double max = parabola[0];
+                double sigma = parabola[1];
                 int count = ys.size();
-                if(max > 0)
+                if(max > 0){
                     tops.push_back(max);
-                else lows.push_back(max);
-                counter_m.push_back(count);
+                    tops_s.push_back(sigma);
+                }
+                else{
+                    lows.push_back(max);
+                    lows_s.push_back(sigma);
+                }
+                max_counter.push_back(count);
             }
             i++;
         }
         DelFirstLast(tops);
         DelFirstLast(lows);
-        DelFirstLast(counter_m);
+        DelFirstLast(max_counter);
+        DelFirstLast(tops_s);
+        DelFirstLast(lows_s);
     }
 
     void GetAmplitude(){
-        ThreeSigma(tops);
-        ThreeSigma(lows);
-        top = Mean(tops);
-        low = Mean(lows);
-        stddev_top = GetStdDev(tops, tops.size() - 1);
-        stddev_low = GetStdDev(lows, lows.size() - 1);
-        sigma_top = stddev_top / sqrt(tops.size());
-        sigma_low = stddev_low / sqrt(lows.size());
-        vector<double> vals = {top, abs(low)}, sigs = {sigma_top, sigma_low};
+        ThreeSigma(tops, tops_s);
+        ThreeSigma(lows, lows_s);
+        top = WeightedMean(tops, tops_s);
+        low = WeightedMean(lows, lows_s);
+        top_stddev = GetStdDev(tops, tops.size() - 1);
+        low_stddev = GetStdDev(lows, lows.size() - 1);
+        top_sigma = MeanSigma(tops_s);
+        low_sigma = MeanSigma(lows_s);
+        vector<double> vals = {top, abs(low)}, sigs = {top_sigma, low_sigma};
         amp = WeightedMean(vals, sigs);
-        sigma_amp = MeanSigma(sigs);
+        amp_sigma = MeanSigma(sigs);
     }
 
     void PrintData(){
-        cout<< "Expected period = " << real_per <<endl;
+        cout<< "Expected period = " << per_real <<endl;
         cout<< "Limit = " << limit <<endl;
         cout<< "Intersections = " << times.size() <<endl;
         cout<< "Periods = " << periods.size() <<endl;
         cout<< "Tops = " << tops.size() <<endl;
         cout<< "Lows = " << lows.size() <<endl;
         Cell(' '); Cell("Average"); Cell("Minimum"); Cell("Maximum"); Cell("Std. dev."); cout<<endl;
-        cout<< setw(15) << left << "Period"; Cell(avg_per); Cell(2.0 * Min(periods)); Cell(2.0 * Max(periods)); Cell(stddev_per); cout<<endl;
+        cout<< setw(15) << left << "Period"; Cell(per_avg); Cell(2.0 * Min(periods)); Cell(2.0 * Max(periods)); Cell(per_stddev); cout<<endl;
         cout<< setw(15) << left << "Correlation"; Cell(Mean(correlations)); Cell(Min(correlations)); Cell(Max(correlations)); cout<<endl;
-        cout<< setw(15) << left << "Number points"; Cell(Mean(counter_per)); Cell(Min(counter_per)); Cell(Max(counter_per)); cout<<endl;
-        cout<< setw(15) << left << "Top amplitude"; Cell(top); Cell(Min(tops)); Cell(Max(tops)); Cell(stddev_top); cout<<endl;
-        cout<< setw(15) << left << "Low amplitude"; Cell(low); Cell(Max(lows)); Cell(Min(lows)); Cell(stddev_low); cout<<endl;
-        cout<< setw(15) << left << "Number points"; Cell(Mean(counter_m)); Cell(Min(counter_m)); Cell(Max(counter_m)); cout<<endl;
+        cout<< setw(15) << left << "Number points"; Cell(Mean(per_counter)); Cell(Min(per_counter)); Cell(Max(per_counter)); cout<<endl;
+        cout<< setw(15) << left << "Top amplitude"; Cell(top); Cell(Min(tops)); Cell(Max(tops)); Cell(top_stddev); cout<<endl;
+        cout<< setw(15) << left << "Low amplitude"; Cell(low); Cell(Max(lows)); Cell(Min(lows)); Cell(low_stddev); cout<<endl;
+        cout<< setw(15) << left << "Number points"; Cell(Mean(max_counter)); Cell(Min(max_counter)); Cell(Max(max_counter)); cout<<endl;
     }
 
-    double Interpol(vector<double> xs, vector<double> ys){
+    array<double, 2> Interpol(vector<double> xs, vector<double> ys){
         double xone = 0.0, xtwo = 0.0, yone = 0.0, xy = 0.0;
         int data_size = xs.size();
         for (int i = 0; i < data_size; i++){
@@ -171,11 +187,16 @@ struct dataset_struct {
         double coeff = ((data_size * xy) - (xone * yone)) / delta;
         double rcept = ((xtwo * yone) - (xone * xy)) / delta;
         double interpol = -1.0 * rcept / coeff;
-        return interpol;
+        double num = 0.0;
+        for (int i = 0; i < data_size; i++)
+            num += pow ((ys[i] - (coeff * xs[i]) - rcept), 2.0);
+        double sigma_post = sqrt(num / (data_size - 2.0));
+        array<double, 2> out = {interpol, sigma_post};
+        return out;
     }
 
     // interpolazione parabolica
-    double Parabola(vector<double> xs, vector<double> ys){
+    array<double, 2> Parabola(vector<double> xs, vector<double> ys){
         double x1 = 0.0, x2 = 0.0, x3 = 0.0, x4 = 0.0, y1 = 0.0, x1y1 = 0.0, x2y1 = 0.0;
         int n = xs.size();
         for(int i = 0; i < n; i++){
@@ -203,7 +224,14 @@ struct dataset_struct {
         double a = ((x2y1 * lt) - (x1y1 * lm) + (y1 * lb)) / delta;
         double b = (- (x2y1 * mt) + (x1y1 * mm) - (y1 * mb)) / delta;
         double c = ((x2y1 * rt) - (x1y1 * rm) + (y1 * rb)) / delta;
-        return (c - ((b * b) / (4.0 * a)));
+        double vertix = (c - ((b * b) / (4.0 * a)));
+        double num = 0.0;
+        for (int i = 0; i < n; i++){
+            num += pow(ys[i] - (a * pow(xs[i], 2.0) + b * xs[i] + c), 2.0);
+        }
+        double sigma_post = sqrt(num / (n - 3));
+        array<double, 2> out = {vertix, sigma_post};
+        return out;
     }
 };
 
@@ -252,9 +280,9 @@ struct sample_struct {
             cout<< "Permission denied" <<endl;
             exit(1);
         }
-        write<< freq <<'\t' << forces.avg_per <<'\t' << forces.sigma_per <<'\t' << forces.amp <<'\t' << forces.sigma_amp <<'\t';
-        write<< angles.avg_per <<'\t' << angles.sigma_per <<'\t' << angles.top <<'\t' << angles.sigma_top <<'\t'
-             << angles.low <<'\t' << angles.sigma_low <<'\t' << angles.amp <<'\t' << angles.sigma_amp <<'\t' << angles.puls <<'\t' <<angles.sigma_puls <<endl;
+        write<< freq <<'\t' << forces.per_avg <<'\t' << forces.per_sigma <<'\t' << forces.amp <<'\t' << forces.amp_sigma <<'\t';
+        write<< angles.per_avg <<'\t' << angles.per_sigma <<'\t' << angles.top <<'\t' << angles.top_sigma <<'\t'
+             << angles.low <<'\t' << angles.low_sigma <<'\t' << angles.amp <<'\t' << angles.amp_sigma <<'\t' << angles.puls <<'\t' <<angles.puls_sigma <<endl;
         write.close();
     }
 };
@@ -362,18 +390,24 @@ double CoeffCorr(vector<double> xs, vector<double> ys){
     return corr_coeff;
 }
 
-void ThreeSigma(vector<double> &data){
+void ThreeSigma(vector<double> &data, vector<double> &sigmas){
     vector<double> old_data, new_data(data);
+    vector<double> old_sigmas, new_sigmas(sigmas);
     do {
         old_data = new_data;
+        old_sigmas = new_sigmas;
         new_data.clear();
+        new_sigmas.clear();
         double three_sigma = 3.0 * GetStdDev(old_data, (old_data.size() - 1));
         double mean = Mean(old_data);
-        for (double c : old_data)
-            if(((mean - three_sigma) < c) && (c < (mean + three_sigma)))
-                new_data.push_back(c);
+        for (int i = 0; i < old_data.size(); i++)
+            if(((mean - three_sigma) < old_data[i]) && (old_data[i] < (mean + three_sigma))){
+                new_data.push_back(old_data[i]);
+                new_sigmas.push_back(old_sigmas[i]);
+            }
     } while (new_data.size() < old_data.size());
     data = new_data;
+    sigmas = new_sigmas;
 }
 
 void DelFirstLast(vector<double> &data){
