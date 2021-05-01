@@ -191,7 +191,8 @@ struct dataset_struct {
         for (int i = 0; i < data_size; i++)
             num += pow ((ys[i] - (coeff * xs[i]) - rcept), 2.0);
         double sigma_post = sqrt(num / (data_size - 2.0));
-        array<double, 2> out = {interpol, sigma_post};
+        double x_sigma = sigma_post / coeff;
+        array<double, 2> out = {interpol, x_sigma};
         return out;
     }
 
