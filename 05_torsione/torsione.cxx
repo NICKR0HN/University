@@ -11,8 +11,8 @@
 using namespace std;
 
 // variabili globali
-const string ifile = "./data/period.txt";
-const string ofile = "./data/results.txt";
+const string ifile = "./data/1_period.txt";
+const string ofile = "./data/1_results.txt";
 const double dt = 0.02;
 
 // stampa su console
@@ -288,20 +288,25 @@ struct sample_struct {
 };
 
 // prototipi funzioni main
+void OverWriteFile();
 vector<sample_struct> ReadFile();
 
 int main(){
+    OverWriteFile();
+    vector<sample_struct> samples = ReadFile();
+    return 0;
+}
+
+// funzioni main
+void OverWriteFile(){
     ofstream overwrite(ofile, ofstream::trunc);
     if (!overwrite.is_open()){
         cout<< "Permission denied" <<endl;
         exit(1);
     }
     overwrite.close();
-    vector<sample_struct> samples = ReadFile();
-    return 0;
 }
 
-// funzioni main
 vector<sample_struct> ReadFile(){
     vector<sample_struct> samples;
     ifstream input_file(ifile);
