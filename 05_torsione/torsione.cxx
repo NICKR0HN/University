@@ -27,6 +27,8 @@ void PrintEoF(char sep){
 double Min(vector<double>);
 double Max(vector<double>);
 double Mean(vector<double>);
+double WeightedMean(vector<double>, vector<double>);
+double MeanSigma(vector<double>);
 double Summation(vector<double>);
 double GetStdDev(vector<double>, int);
 double CoeffCorr(vector<double>, vector<double>);
@@ -35,16 +37,17 @@ void DelFirstLast(vector<double>&);
 
 // struttura dei dati di una singola sinusoide
 struct dataset_struct {
-    double real_p, limit;
+    double real_per, limit;
     vector<double> data;
-    vector<double> times, periods, correlations, counter_p;
-    double avg_p, stddev_p, sigma_p;
+    vector<double> times, periods, correlations, counter_per;
+    double avg_per, stddev_per, sigma_per, puls, sigma_puls;
     vector<double> tops, lows, counter_m;
     double top, stddev_top, sigma_top;
     double low, stddev_low, sigma_low;
+    double amp, sigma_amp;
     dataset_struct(){};
     dataset_struct(double period_in, vector<double> data_in){
-        real_p = period_in;
+        real_per = period_in;
         data = data_in;
         GetLimit();
         GetIntersections();
@@ -78,22 +81,24 @@ struct dataset_struct {
                 double corr = CoeffCorr(xs, ys);
                 correlations.push_back(abs(corr));
                 int count = ys.size();
-                counter_p.push_back(count);
+                counter_per.push_back(count);
             }
             i++;
         }
         DelFirstLast(times);
         DelFirstLast(correlations);
-        DelFirstLast(counter_p);
+        DelFirstLast(counter_per);
     }
 
     void GetPeriods(){
         for (int i = 1; i < times.size(); i = i+2)
             periods.push_back(times[i] - times[i-1]);
         ThreeSigma(periods);
-        avg_p = 2.0 * Mean(periods);
-        stddev_p = 2.0 * GetStdDev(periods, (periods.size() - 1));
-        sigma_p = stddev_p / sqrt(periods.size());
+        avg_per = 2.0 * Mean(periods);
+        stddev_per = 2.0 * GetStdDev(periods, (periods.size() - 1));
+        sigma_per = stddev_per / sqrt(periods.size());
+        puls = 2.0 * M_PI / avg_per;
+        sigma_puls = 2.0 * M_PI * sigma_per / pow(puls, 2.0);
     }
 
     // massimi e minimi
@@ -132,19 +137,22 @@ struct dataset_struct {
         stddev_low = GetStdDev(lows, lows.size() - 1);
         sigma_top = stddev_top / sqrt(tops.size());
         sigma_low = stddev_low / sqrt(lows.size());
+        vector<double> vals = {top, abs(low)}, sigs = {sigma_top, sigma_low};
+        amp = WeightedMean(vals, sigs);
+        sigma_amp = MeanSigma(sigs);
     }
 
     void PrintData(){
-        cout<< "Expected period = " << real_p <<endl;
+        cout<< "Expected period = " << real_per <<endl;
         cout<< "Limit = " << limit <<endl;
         cout<< "Intersections = " << times.size() <<endl;
         cout<< "Periods = " << periods.size() <<endl;
         cout<< "Tops = " << tops.size() <<endl;
         cout<< "Lows = " << lows.size() <<endl;
         Cell(' '); Cell("Average"); Cell("Minimum"); Cell("Maximum"); Cell("Std. dev."); cout<<endl;
-        cout<< setw(15) << left << "Period"; Cell(avg_p); Cell(2.0 * Min(periods)); Cell(2.0 * Max(periods)); Cell(stddev_p); cout<<endl;
+        cout<< setw(15) << left << "Period"; Cell(avg_per); Cell(2.0 * Min(periods)); Cell(2.0 * Max(periods)); Cell(stddev_per); cout<<endl;
         cout<< setw(15) << left << "Correlation"; Cell(Mean(correlations)); Cell(Min(correlations)); Cell(Max(correlations)); cout<<endl;
-        cout<< setw(15) << left << "Number points"; Cell(Mean(counter_p)); Cell(Min(counter_p)); Cell(Max(counter_p)); cout<<endl;
+        cout<< setw(15) << left << "Number points"; Cell(Mean(counter_per)); Cell(Min(counter_per)); Cell(Max(counter_per)); cout<<endl;
         cout<< setw(15) << left << "Top amplitude"; Cell(top); Cell(Min(tops)); Cell(Max(tops)); Cell(stddev_top); cout<<endl;
         cout<< setw(15) << left << "Low amplitude"; Cell(low); Cell(Max(lows)); Cell(Min(lows)); Cell(stddev_low); cout<<endl;
         cout<< setw(15) << left << "Number points"; Cell(Mean(counter_m)); Cell(Min(counter_m)); Cell(Max(counter_m)); cout<<endl;
@@ -174,10 +182,10 @@ struct dataset_struct {
             x1 += xs[i];
             x2 += pow(xs[i], 2.0);          //  [x4] [x3] [x2] | [x2y1]
             x3 += pow(xs[i], 3.0);          //  [x3] [x2] [x1] | [x1y1]
-            x4 += pow(xs[i], 2.0);          //  [x2] [x1] [n]  |  [y1]
+            x4 += pow(xs[i], 4.0);          //  [x2] [x1] [n]  |  [y1]
             y1 += ys[i];
             x1y1 += xs[i] * ys[i];
-            x2y1 += pow(xs[i], 2.0) * ys[1];
+            x2y1 += pow(xs[i], 2.0) * ys[i];
         }
         // determinante delle sottomatrici
         double lt = (n * x2) - (x1 * x1);   //  [lt] [mt] [rt]
@@ -195,7 +203,7 @@ struct dataset_struct {
         double a = ((x2y1 * lt) - (x1y1 * lm) + (y1 * lb)) / delta;
         double b = (- (x2y1 * mt) + (x1y1 * mm) - (y1 * mb)) / delta;
         double c = ((x2y1 * rt) - (x1y1 * rm) + (y1 * rb)) / delta;
-        return (c - ((b * b) / (4.0 * a))); 
+        return (c - ((b * b) / (4.0 * a)));
     }
 };
 
@@ -204,6 +212,11 @@ struct sample_struct {
     double freq;
     dataset_struct forces, angles;
     sample_struct(string forces_in, string angles_in){
+        ReadFile(forces_in, angles_in);
+        WriteFile();
+    }
+
+    void ReadFile(string forces_in, string angles_in){
         istringstream forces_line(forces_in), angles_line(angles_in);
         forces_line >> freq;
         cout<< "FREQUENCY = " << freq << "Hz" <<endl;
@@ -231,6 +244,18 @@ struct sample_struct {
         cout<< "PENDULUM" <<endl<<endl;
         angles = dataset_struct(real_p, angles_data);
         PrintEoF('#');
+    }
+
+    void WriteFile(){
+        ofstream write(ofile, ofstream::app);
+        if (!write.is_open()){
+            cout<< "Permission denied" <<endl;
+            exit(1);
+        }
+        write<< freq <<'\t' << forces.avg_per <<'\t' << forces.sigma_per <<'\t' << forces.amp <<'\t' << forces.sigma_amp <<'\t';
+        write<< angles.avg_per <<'\t' << angles.sigma_per <<'\t' << angles.top <<'\t' << angles.sigma_top <<'\t'
+             << angles.low <<'\t' << angles.sigma_low <<'\t' << angles.amp <<'\t' << angles.sigma_amp <<'\t' << angles.puls <<'\t' <<angles.sigma_puls <<endl;
+        write.close();
     }
 };
 
@@ -287,6 +312,27 @@ double Mean(vector<double> data){
         sum += c;
     double mean = sum / data.size();
     return mean;
+}
+
+double WeightedMean(vector<double> values, vector<double> sigmas){
+    double num = 0.0, den = 0.0, sig = 0.0;
+    int N = values.size();
+        for (int i = 0; i < N; i++){
+            double sq_sig = pow(sigmas[i], 2.0);
+            num += values[i] / sq_sig;
+            den += 1.0 / sq_sig;
+            sig += sq_sig;
+        }
+        double mean = num / den;
+        return mean;
+}
+
+double MeanSigma(vector<double> sigmas){
+    double sig = 0.0;
+    for(double sigma : sigmas)
+        sig += sigma * sigma;
+    double MeanSigma = sqrt(sig) / sigmas.size();
+    return MeanSigma;
 }
 
 double Summation(vector<double> data){
