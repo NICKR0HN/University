@@ -240,11 +240,11 @@ struct sample_struct {
     double freq;
     dataset_struct forces, angles;
     sample_struct(string forces_in, string angles_in){
-        ReadFile(forces_in, angles_in);
+        ReadLine(forces_in, angles_in);
         WriteFile();
     }
 
-    void ReadFile(string forces_in, string angles_in){
+    void ReadLine(string forces_in, string angles_in){
         istringstream forces_line(forces_in), angles_line(angles_in);
         forces_line >> freq;
         cout<< "FREQUENCY = " << freq << "Hz" <<endl;
