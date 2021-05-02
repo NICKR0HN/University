@@ -40,7 +40,7 @@ struct dataset_struct {
     double per_real, limit;
     vector<double> data;
     vector<double> times, times_s, periods, per_sigmas, correlations, per_counter;
-    double per_avg, per_stddev, per_sigma, puls, puls_sigma;
+    double per_avg, per_stddev, per_sigma, pulse, pulse_s;
     vector<double> tops, tops_s, lows, lows_s, max_counter;
     double top, top_stddev, top_sigma;
     double low, low_stddev, low_sigma;
@@ -104,8 +104,8 @@ struct dataset_struct {
         per_avg = 2.0 * WeightedMean(periods, per_sigmas);
         per_stddev = 2.0 * GetStdDev(periods, (periods.size() - 1));
         per_sigma = 2.0 * MeanSigma(per_sigmas);
-        puls = 2.0 * M_PI / per_avg;
-        puls_sigma = 2.0 * M_PI * per_sigma / pow(puls, 2.0);
+        pulse = 2.0 * M_PI / per_avg;
+        pulse_s = 2.0 * M_PI * per_sigma / pow(pulse, 2.0);
     }
 
     // massimi e minimi
@@ -283,7 +283,7 @@ struct sample_struct {
         }
         write<< freq <<'\t' << forces.per_avg <<'\t' << forces.per_sigma <<'\t' << forces.amp <<'\t' << forces.amp_sigma <<'\t';
         write<< angles.per_avg <<'\t' << angles.per_sigma <<'\t' << angles.top <<'\t' << angles.top_sigma <<'\t'
-             << angles.low <<'\t' << angles.low_sigma <<'\t' << angles.amp <<'\t' << angles.amp_sigma <<'\t' << angles.puls <<'\t' <<angles.puls_sigma <<endl;
+             << angles.low <<'\t' << angles.low_sigma <<'\t' << angles.amp <<'\t' << angles.amp_sigma <<'\t' << angles.pulse <<'\t' <<angles.pulse_s <<endl;
         write.close();
     }
 };
