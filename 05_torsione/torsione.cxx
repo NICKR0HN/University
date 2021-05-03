@@ -105,7 +105,7 @@ struct dataset_struct {
         per_stddev = 2.0 * GetStdDev(periods, (periods.size() - 1));
         per_sigma = 2.0 * MeanSigma(per_sigmas);
         pulse = 2.0 * M_PI / per_avg;
-        pulse_s = 2.0 * M_PI * per_sigma / pow(pulse, 2.0);
+        pulse_s = 2.0 * M_PI * per_sigma / pow(per_avg, 2.0);
     }
 
     // massimi e minimi

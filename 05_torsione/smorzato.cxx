@@ -223,7 +223,7 @@ struct sample_struct {
         per_avg = WeightedMean(periods, periods_s);
         per_avg_s = MeanSigma(periods_s);
         pulse = 2.0 * M_PI / per_avg;
-        pulse_s = 2.0 * M_PI * per_avg_s / pow(pulse, 2.0);
+        pulse_s = 2.0 * M_PI * per_avg_s / pow(per_avg, 2.0);
     }
 
     void GetLines(){
@@ -275,6 +275,7 @@ struct sample_struct {
     void PrintData(){
         cout<< "Period = " << per_avg << " s \t +- " << per_avg_s << " s \t (Std. Dev. = " << GetStdDev(periods, periods.size()-1) << ')' <<endl;
         cout<< " Using " << Mean(periods_points) << " points (from " << Min(periods_points) << " to " << Max(periods_points) << ')' <<endl;
+        cout<< " Using " << periods.size() << " periods" <<endl;
         cout<< "Pulse = " << pulse << " Hz \t +- " << pulse_s << " Hz" <<endl;
         cout<< "Amplitudes: using " << Mean(amp_points) << " points (from " << Min(amp_points) << " to " << Max(amp_points) << ')' <<endl;
         cout<< "Maximums logarithmic correlation = " << max_corr <<endl;
