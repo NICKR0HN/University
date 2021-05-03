@@ -288,9 +288,9 @@ struct sample_struct {
 
     void WriteFile(){
         ofstream fileout(ofile, ofstream::app);
-        fileout<< per_avg <<'\t' << per_avg_s <<'\t' << GetStdDev(periods, periods.size()-1) <<'\t' << Mean(periods_points) <<'\t' << pulse <<'\t'
-            << pulse_s <<'\t' << Mean(amp_points) <<'\t' << max_corr <<'\t' << max_a <<'\t' << max_a_s <<'\t' << max_b <<'\t' << max_b_s
-            <<'\t' << min_corr <<'\t' << min_a <<'\t' << min_a_s <<'\t' << min_b <<'\t' << min_b_s <<endl;
+        fileout<< per_avg <<'\t' << per_avg_s <<'\t' << GetStdDev(periods, periods.size()-1) <<'\t' << Mean(periods_points) <<'\t' << pulse
+               <<'\t' << pulse_s <<'\t' << Mean(amp_points) <<'\t' << max_corr <<'\t' << max_a <<'\t' << max_a_s <<'\t' << max_b <<'\t'
+               << max_b_s <<'\t' << min_corr <<'\t' << min_a <<'\t' << min_a_s <<'\t' << min_b <<'\t' << min_b_s <<endl;
     }
 };
 

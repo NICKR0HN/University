@@ -281,9 +281,10 @@ struct sample_struct {
             cout<< "Permission denied" <<endl;
             exit(1);
         }
-        write<< freq <<'\t' << forces.per_avg <<'\t' << forces.per_sigma <<'\t' << forces.amp <<'\t' << forces.amp_sigma <<'\t';
-        write<< angles.per_avg <<'\t' << angles.per_sigma <<'\t' << angles.top <<'\t' << angles.top_sigma <<'\t'
-             << angles.low <<'\t' << angles.low_sigma <<'\t' << angles.amp <<'\t' << angles.amp_sigma <<'\t' << angles.pulse <<'\t' <<angles.pulse_s <<endl;
+        write<< freq <<'\t' << forces.per_avg <<'\t' << forces.per_sigma <<'\t' << forces.amp <<'\t' << forces.amp_sigma <<'\t'
+             << angles.per_avg <<'\t' << angles.per_sigma <<'\t' << angles.top <<'\t' << angles.top_sigma <<'\t'
+             << angles.low <<'\t' << angles.low_sigma <<'\t' << angles.amp <<'\t' << angles.amp_sigma <<'\t' << angles.pulse
+             <<'\t' <<angles.pulse_s <<endl;
         write.close();
     }
 };
