@@ -103,6 +103,8 @@ struct curve_struct{
         y_min_s = parabola[2];
         if(parabola_points > xs_par.size())
             parabola_points = xs_par.size();
+        cout<< x_max <<'\t' << y_max <<'\t' << y_max_s <<endl;
+        cout<< x_min <<'\t' << y_min <<'\t' << y_min_s <<endl;
     }
 
     array<double, 2> Interpol(vector<double> xs, vector<double> ys){
