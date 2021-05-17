@@ -14,6 +14,8 @@ using namespace std;
 
 // variabili globali
 const string idir = "./data";
+const string odir = "./results";
+const string ofile = "./output.txt";
 const double p_conv = 10000.0, v_conv = 0.000001, t_conv = 273.15;
 
 // stampa su console
@@ -33,14 +35,21 @@ double GetStdDev(vector<double>, int);
 double CoeffCorr(vector<double>, vector<double>);
 void ThreeSigma(vector<double>&, vector<double>&);
 array<double, 4> Interpol(vector<double>, vector<double>);
+vector<double> LineDist(vector<double>, vector<double>, double, double);
+string GetFileName(string);
 
 //strutture
 struct sample_struct{
     int temp;
     vector<double> ps, vs, ts;
+    double a1, a1_s, b1, b1_s, a2, a2_s, b2, b2_s, corr;
+    vector<double> rests_1, rests_2;
     sample_struct(string filename){
         ReadFile(filename);
         GetLines();
+        GetRests();
+        PrintConsole();
+        WriteFile(filename);
     }
 
     void ReadFile(string filename){
@@ -51,33 +60,65 @@ struct sample_struct{
         }
         double pi, vi, ti;
         while ((ifile >> pi) && (ifile >> vi) && (ifile >> ti)){
-            ps.push_back(1.0 / (pi * p_conv));
-            vs.push_back(vi * v_conv);
-            ts.push_back(ti + t_conv);
+            if((4.8 < vi) && (vi < 23.0)){
+                ps.push_back(1.0 / (pi * p_conv));
+                vs.push_back(vi * v_conv);
+                ts.push_back(ti + t_conv);
+            }
         }
         temp = round(ts[0] - t_conv);
         ifile.close();
     }
 
     void GetLines(){
-        cout<< "Temperature: " << temp <<endl<<endl;
+        corr = CoeffCorr(ps, vs);
         array<double, 4> line = Interpol(ps, vs);
-        for (double c : line){
-            Cell(c);
-        }
-        cout<<endl;
+        a1 = line[0];
+        a1_s = line[1];
+        b1 = line[2];
+        b1_s = line[3];
         line = Interpol(vs, ps);
-        for (double c : line){
-            Cell(c);
-        }
+        a2 = line[0];
+        a2_s = line[1];
+        b2 = line[2];
+        b2_s = line[3];
+    }
+
+    void GetRests(){
+        rests_1 = LineDist(ps, vs, a1, b1);
+        rests_2 = LineDist(vs, ps, a2, b2);
+    }
+
+    void PrintConsole(){
+        cout<< "Temperature: " << temp <<endl;
+        cout<< "Correlation: " << corr <<endl;
         PrintEoF('-');
+
+    }
+
+    void WriteFile(string filepath){
+        ofstream fileout(ofile, ofstream::app);
+        fileout<< temp <<'\t' <<  corr <<'\t' << a1 <<'\t' << a1_s <<'\t' << b1 <<'\t' << b1_s
+                       <<'\t' << a2 <<'\t' << a2_s <<'\t' << b2 <<'\t' << b2_s <<endl;
+        fileout.close();
+        ofstream output(odir + GetFileName(filepath));
+        if (!output.is_open()){
+            cout<< "Permission denied" <<endl;
+            exit(1);
+        }
+        for (int i = 0; i < rests_1.size(); i++){
+            output<< rests_1[i] <<'\t' << rests_2[i] <<endl;
+        }
+        output.close();
     }
 };
 
 //prototipi funzioni main
 vector<string> GetFiles(string);
+void OverWriteFile();
 
 int main(){
+    OverWriteFile();
     vector<string> filenames = GetFiles(idir);        // lettura delle cartelle con i dati
     vector<sample_struct> samples;
     for (string c : filenames){
@@ -87,6 +128,14 @@ int main(){
     return 0;
 }
 
+void OverWriteFile(){
+    ofstream overwrite(ofile, ofstream::trunc);
+    if (!overwrite.is_open()){
+        cout<< "Permission denied" <<endl;
+        exit(1);
+    }
+    overwrite.close();
+}
 
 vector<string> GetFiles(string wdir){
     vector<string> filenames;
@@ -209,4 +258,16 @@ array<double, 4> Interpol(vector<double> xs, vector<double> ys){
     double rcept_s = sigma_post * sqrt(xtwo / delta);
     array<double, 4> out = {coeff, coeff_s, rcept, rcept_s};
     return out;
+}
+
+vector<double> LineDist(vector<double> xs, vector<double> ys, double coeff, double rcept){
+    vector<double> dist;
+    for (int i = 0; i < xs.size(); i++){
+        dist.push_back(ys[i] - xs[i] * coeff - rcept);
+    }
+    return dist;
+}
+
+string GetFileName(string filepath){
+    return filepath.substr(filepath.rfind('/'), filepath.size() - 1);
 }
