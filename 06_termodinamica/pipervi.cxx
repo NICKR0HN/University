@@ -16,7 +16,7 @@ using namespace std;
 const string idir = "./data";
 const string odir = "./results";
 const string ofile = "./output.txt";
-const double p_conv = 10000.0, v_conv = 0.000001, t_conv = 273.15;
+const double p_conv = 98100.0, v_conv = 0.000001, t_conv = 273.15;
 
 // stampa su console
 template <typename T> void Cell(T text){
@@ -40,7 +40,7 @@ string GetFileName(string);
 
 //strutture
 struct sample_struct{
-    int temp;
+    double temp;
     vector<double> ps, vs, ts;
     double a1, a1_s, b1, b1_s, a2, a2_s, b2, b2_s, corr;
     vector<double> rests_1, rests_2;
@@ -66,7 +66,7 @@ struct sample_struct{
                 ts.push_back(ti + t_conv);
             }
         }
-        temp = round(ts[0] - t_conv);
+        temp = (Mean(ts) - t_conv);
         ifile.close();
     }
 
