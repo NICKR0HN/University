@@ -17,6 +17,8 @@ const string idir = "./data";
 const string odir = "./results";
 const string ofile = "./output.txt";
 const double p_conv = 98100.0, v_conv = 0.000001, t_conv = 273.15;
+const double t_amb = 20.0 + t_conv, t_amb_s = 0.1;
+const double R = 8.314462618;
 
 // stampa su console
 template <typename T> void Cell(T text){
@@ -34,20 +36,25 @@ double Summation(vector<double>);
 double GetStdDev(vector<double>, int);
 double CoeffCorr(vector<double>, vector<double>);
 void ThreeSigma(vector<double>&, vector<double>&);
-array<double, 4> Interpol(vector<double>, vector<double>);
+array<double, 5> Interpol(vector<double>, vector<double>);
 vector<double> LineDist(vector<double>, vector<double>, double, double);
 string GetFileName(string);
 
 //strutture
 struct sample_struct{
-    double temp;
+    double temp, t_avg, t_avg_s;
     vector<double> ps, vs, ts;
-    double a1, a1_s, b1, b1_s, a2, a2_s, b2, b2_s, corr;
+    double a1, a1_s, b1, b1_s, post1, a2, a2_s, b2, b2_s, post2, corr;
     vector<double> rests_1, rests_2;
+    double vol1, vol1_s, vol2, vol2_s, vol0;
+    vector<double> moles;
+    double mol, mol_s;
     sample_struct(string filename){
         ReadFile(filename);
         GetLines();
         GetRests();
+        GetVolumes();
+        GetMoles();
         PrintConsole();
         WriteFile(filename);
     }
@@ -66,27 +73,45 @@ struct sample_struct{
                 ts.push_back(ti + t_conv);
             }
         }
-        temp = (Mean(ts) - t_conv);
+        t_avg = Mean(ts);
+        t_avg_s = GetStdDev(ts, ts.size() - 1);
+        temp = t_avg - t_conv;
         ifile.close();
     }
 
     void GetLines(){
+        array<double, 5> line;
         corr = CoeffCorr(ps, vs);
-        array<double, 4> line = Interpol(ps, vs);
-        a1 = line[0];
-        a1_s = line[1];
-        b1 = line[2];
-        b1_s = line[3];
+        line = Interpol(ps, vs);
+        a1 = line[0]; a1_s = line[1];
+        b1 = line[2]; b1_s = line[3];
+        post1 = line[4];
         line = Interpol(vs, ps);
-        a2 = line[0];
-        a2_s = line[1];
-        b2 = line[2];
-        b2_s = line[3];
+        a2 = line[0]; a2_s = line[1];
+        b2 = line[2]; b2_s = line[3];
+        post2 = line[4];
     }
 
     void GetRests(){
         rests_1 = LineDist(ps, vs, a1, b1);
         rests_2 = LineDist(vs, ps, a2, b2);
+    }
+
+    void GetVolumes(){
+        vol1 = -1.0 * b1;
+        vol1_s = b1_s;
+        vol2 = b2 / a2;
+        vol2_s = abs(vol2) * sqrt(pow(a2_s / a2, 2) + pow(b2_s / b2, 2));
+    }
+
+    void GetMoles(){
+        double v_corr = vol1 * t_amb / t_avg;     //temporaneo
+        for(int i = 0; i < vs.size(); i++){
+            double mole = (vs[i] + v_corr) / (R * ts[i] * ps[i]);
+            moles.push_back(mole);
+        }
+        mol = Mean(moles);
+        mol_s = GetStdDev(moles, moles.size() - 1);
     }
 
     void PrintConsole(){
@@ -98,8 +123,12 @@ struct sample_struct{
 
     void WriteFile(string filepath){
         ofstream fileout(ofile, ofstream::app);
-        fileout<< temp <<'\t' <<  corr <<'\t' << a1 <<'\t' << a1_s <<'\t' << b1 <<'\t' << b1_s
-                       <<'\t' << a2 <<'\t' << a2_s <<'\t' << b2 <<'\t' << b2_s <<endl;
+        fileout<< temp <<'\t' << t_avg_s <<'\t' << corr
+            <<'\t' << a1 <<'\t' << a1_s <<'\t' << b1 <<'\t' << b1_s <<'\t' << post1
+            <<'\t' << a2 <<'\t' << a2_s <<'\t' << b2 <<'\t' << b2_s <<'\t' << post2
+            <<'\t' << vol1 <<'\t' << vol1_s
+            <<'\t' << vol2 <<'\t' << vol2_s
+            <<'\t' << mol <<'\t' << mol_s <<endl;
         fileout.close();
         ofstream output(odir + GetFileName(filepath));
         if (!output.is_open()){
@@ -107,7 +136,7 @@ struct sample_struct{
             exit(1);
         }
         for (int i = 0; i < rests_1.size(); i++){
-            output<< rests_1[i] <<'\t' << rests_2[i] <<endl;
+            output<< rests_1[i] <<'\t' << rests_2[i] <<'\t' << moles[i] <<endl;
         }
         output.close();
     }
@@ -238,7 +267,7 @@ void ThreeSigma(vector<double> &data, vector<double> &sigmas){
     sigmas = new_sigmas;
 }
 
-array<double, 4> Interpol(vector<double> xs, vector<double> ys){
+array<double, 5> Interpol(vector<double> xs, vector<double> ys){
     double xone = 0.0, xtwo = 0.0, yone = 0.0, xy = 0.0;
     int data_size = xs.size();
     for (int i = 0; i < data_size; i++){
@@ -256,7 +285,7 @@ array<double, 4> Interpol(vector<double> xs, vector<double> ys){
     double sigma_post = sqrt(num / (data_size - 2.0));
     double coeff_s = sigma_post * sqrt(data_size / delta);
     double rcept_s = sigma_post * sqrt(xtwo / delta);
-    array<double, 4> out = {coeff, coeff_s, rcept, rcept_s};
+    array<double, 5> out = {coeff, coeff_s, rcept, rcept_s, sigma_post};
     return out;
 }
 
