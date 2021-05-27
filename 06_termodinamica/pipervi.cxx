@@ -101,7 +101,8 @@ struct sample_struct{
         vol1 = -1.0 * b1;
         vol1_s = b1_s;
         vol2 = b2 / a2;
-        vol2_s = abs(vol2) * sqrt(pow(a2_s / a2, 2) + pow(b2_s / b2, 2));
+        double cov_ab = (Mean(vs) / vs.size()) * pow((post2 / GetStdDev(vs, vs.size())), 2.0);
+        vol2_s = abs(vol2) * sqrt(pow(a2_s / a2, 2) + pow(b2_s / b2, 2) - (2.0 * cov_ab / (a2 * b2)));
     }
 
     void GetMoles(){
